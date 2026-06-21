@@ -29,6 +29,16 @@ export function loadData() {
 
 export function saveData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  tryAutoSync(data)
+}
+
+async function tryAutoSync(data) {
+  try {
+    const { isSyncConfigured, pushToGist } = await import('./sync')
+    if (isSyncConfigured()) {
+      pushToGist(data).catch(() => {})
+    }
+  } catch {}
 }
 
 export function generateId() {

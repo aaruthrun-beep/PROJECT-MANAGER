@@ -1,19 +1,36 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Settings as SettingsIcon, Download, Upload, Trash2, Sun, Moon, Monitor, Keyboard, Bell, Database } from 'lucide-react'
+import { Settings as SettingsIcon, Download, Upload, Trash2, Sun, Moon, Monitor, Keyboard, Bell, Database, GitFork, Lock, Unlock, Cloud } from 'lucide-react'
 import { loadData, saveData, exportData, importData, clearNotifications, generateId } from '../data/store'
 import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/AuthContext'
+import { getSyncConfig, saveSyncConfig, isSyncConfigured, pushToGist, pullFromGist, createGist, syncStatus } from '../data/sync'
 import Card from '../ui/Card'
 import Button from '../ui/Button'
+import Input from '../ui/Input'
 import toast from 'react-hot-toast'
 
 export default function Settings() {
   const { theme, setTheme } = useTheme()
+  const { setPassword, hasPassword, logout, isOwner } = useAuth()
   const [data, setData] = useState(null)
   const [importText, setImportText] = useState('')
   const [showImport, setShowImport] = useState(false)
+  const [passwordForm, setPasswordForm] = useState({ current: '', new: '', confirm: '' })
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [syncConfig, setSyncConfig] = useState({ token: '', gistId: '' })
+  const [syncing, setSyncing] = useState(false)
+  const [syncInfo, setSyncInfo] = useState(null)
 
   useEffect(() => { setData(loadData()) }, [])
+
+  useEffect(() => {
+    const c = getSyncConfig()
+    setSyncConfig(c)
+    if (c.token && c.gistId) {
+      syncStatus().then(setSyncInfo)
+    }
+  }, [])
 
   const handleExport = () => exportData()
 
@@ -38,36 +55,87 @@ export default function Settings() {
 
   const handleAddSampleData = () => {
     const sample = [
-      {
-        id: generateId(), name: 'Website Redesign', description: 'Complete overhaul of company website', status: 'active', priority: 'high', progress: 35, tags: [], createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
-      },
-      {
-        id: generateId(), name: 'Mobile App v2', description: 'Version 2 of the mobile application', status: 'active', priority: 'critical', progress: 60, tags: [], createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
-      },
-      {
-        id: generateId(), name: 'API Integration', description: 'Third-party API integration project', status: 'paused', priority: 'medium', progress: 20, tags: [], createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
-      },
-      {
-        id: generateId(), name: 'Legacy Migration', description: 'Migrate legacy system to new platform', status: 'completed', priority: 'high', progress: 100, tags: [], createdAt: new Date(Date.now() - 60 * 86400000).toISOString(),
-      },
+      { id: generateId(), name: 'Website Redesign', description: 'Complete overhaul of company website', status: 'active', priority: 'high', progress: 35, tags: [], createdAt: new Date(Date.now() - 7 * 86400000).toISOString() },
+      { id: generateId(), name: 'Mobile App v2', description: 'Version 2 of the mobile application', status: 'active', priority: 'critical', progress: 60, tags: [], createdAt: new Date(Date.now() - 14 * 86400000).toISOString() },
+      { id: generateId(), name: 'API Integration', description: 'Third-party API integration project', status: 'paused', priority: 'medium', progress: 20, tags: [], createdAt: new Date(Date.now() - 30 * 86400000).toISOString() },
+      { id: generateId(), name: 'Legacy Migration', description: 'Migrate legacy system to new platform', status: 'completed', priority: 'high', progress: 100, tags: [], createdAt: new Date(Date.now() - 60 * 86400000).toISOString() },
     ]
-
     const today = new Date().toISOString().split('T')[0]
     const sampleEntries = [
-      {
-        id: generateId(), projectId: sample[0].id, title: 'Homepage wireframes', content: 'Completed initial wireframes for the new homepage. Client feedback was positive. Need to iterate on the hero section.', date: today, images: [], videos: [], mood: 'productive', createdAt: new Date().toISOString(),
-      },
-      {
-        id: generateId(), projectId: sample[1].id, title: 'Push notifications setup', content: 'Configured push notification service. Working on deep linking for notification taps.', date: today, images: [], videos: [], mood: 'learning', createdAt: new Date(Date.now() - 3600000).toISOString(),
-      },
+      { id: generateId(), projectId: sample[0].id, title: 'Homepage wireframes', content: 'Completed initial wireframes for the new homepage. Client feedback was positive.', date: today, images: [], videos: [], mood: 'productive', createdAt: new Date().toISOString() },
+      { id: generateId(), projectId: sample[1].id, title: 'Push notifications setup', content: 'Configured push notification service.', date: today, images: [], videos: [], mood: 'learning', createdAt: new Date(Date.now() - 3600000).toISOString() },
     ]
-
     const d = loadData()
     d.projects = [...d.projects, ...sample]
     d.logEntries = [...d.logEntries, ...sampleEntries]
     saveData(d)
     setData(d)
     toast.success('Sample data added')
+  }
+
+  const handleSetPassword = (e) => {
+    e.preventDefault()
+    if (!passwordForm.new) { toast.error('Enter a password'); return }
+    if (passwordForm.new !== passwordForm.confirm) { toast.error('Passwords do not match'); return }
+    if (hasPassword()) {
+      const stored = localStorage.getItem('project_hub_pass')
+      if (stored !== btoa(passwordForm.current)) { toast.error('Current password is wrong'); return }
+    }
+    setPassword(passwordForm.new)
+    setShowPasswordForm(false)
+    setPasswordForm({ current: '', new: '', confirm: '' })
+    toast.success('Password saved')
+  }
+
+  const handleSyncSave = () => {
+    saveSyncConfig(syncConfig)
+    if (syncConfig.token && syncConfig.gistId) {
+      syncStatus().then(setSyncInfo)
+    }
+    toast.success('Sync config saved')
+  }
+
+  const handlePush = async () => {
+    setSyncing(true)
+    try {
+      const data = loadData()
+      await pushToGist(data)
+      toast.success('Data pushed to GitHub Gist')
+      syncStatus().then(setSyncInfo)
+    } catch (e) {
+      toast.error(e.message)
+    }
+    setSyncing(false)
+  }
+
+  const handlePull = async () => {
+    setSyncing(true)
+    try {
+      const data = await pullFromGist()
+      saveData(data)
+      setData(data)
+      toast.success('Data pulled from GitHub Gist')
+      syncStatus().then(setSyncInfo)
+    } catch (e) {
+      toast.error(e.message)
+    }
+    setSyncing(false)
+  }
+
+  const handleCreateGist = async () => {
+    if (!syncConfig.token) { toast.error('Enter your GitHub token first'); return }
+    setSyncing(true)
+    try {
+      const data = loadData()
+      const { gistId, gistUrl } = await createGist(syncConfig.token, data)
+      setSyncConfig(prev => ({ ...prev, gistId }))
+      saveSyncConfig({ token: syncConfig.token, gistId })
+      toast.success(`Gist created! ID: ${gistId}`)
+      syncStatus().then(setSyncInfo)
+    } catch (e) {
+      toast.error(e.message)
+    }
+    setSyncing(false)
   }
 
   const themes = [
@@ -135,13 +203,97 @@ export default function Settings() {
                 <span className="text-sm text-gray-400">{s.label}</span>
                 <div className="flex gap-1">
                   {s.keys.map((k, j) => (
-                    <kbd key={j} className="px-2 py-0.5 text-xs rounded bg-white/10 text-gray-300 font-mono border border-white/10">
-                      {k}
-                    </kbd>
+                    <kbd key={j} className="px-2 py-0.5 text-xs rounded bg-white/10 text-gray-300 font-mono border border-white/10">{k}</kbd>
                   ))}
                 </div>
               </div>
             ))}
+          </div>
+        </Card>
+
+        {/* Authentication */}
+        <Card>
+          <div className="flex items-center gap-2 mb-4">
+            <Lock size={18} className="text-amber-400" />
+            <h3 className="text-lg font-semibold text-white">Authentication</h3>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-400">Status</span>
+              <span className={`text-sm flex items-center gap-1.5 ${isOwner ? 'text-emerald-400' : 'text-gray-500'}`}>
+                {isOwner ? <><Unlock size={13} /> Admin</> : <><Lock size={13} /> Viewer</>}
+              </span>
+            </div>
+            {isOwner && (
+              <Button onClick={logout} variant="glass" className="w-full justify-start text-red-400 hover:bg-red-500/10">
+                <Lock size={14} /> Lock & Logout
+              </Button>
+            )}
+            <hr className="border-white/5" />
+            <Button onClick={() => setShowPasswordForm(!showPasswordForm)} variant="glass" className="w-full justify-start">
+              {hasPassword() ? 'Change Password' : 'Set Password'}
+            </Button>
+            {showPasswordForm && (
+              <form onSubmit={handleSetPassword} className="space-y-2 pl-2 border-l-2 border-indigo-500/30">
+                {hasPassword() && (
+                  <Input label="Current password" type="password" value={passwordForm.current} onChange={e => setPasswordForm({ ...passwordForm, current: e.target.value })} placeholder="Current password" />
+                )}
+                <Input label="New password" type="password" value={passwordForm.new} onChange={e => setPasswordForm({ ...passwordForm, new: e.target.value })} placeholder="New password" />
+                <Input label="Confirm password" type="password" value={passwordForm.confirm} onChange={e => setPasswordForm({ ...passwordForm, confirm: e.target.value })} placeholder="Confirm password" />
+                <div className="flex gap-2">
+                  <Button type="submit" size="sm" className="flex-1">Save</Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setShowPasswordForm(false)}>Cancel</Button>
+                </div>
+              </form>
+            )}
+            <p className="text-xs text-gray-600">Set a password to lock editing. Without logging in, visitors can only view data.</p>
+          </div>
+        </Card>
+
+        {/* GitHub Sync */}
+        <Card>
+          <div className="flex items-center gap-2 mb-4">
+            <GitFork size={18} className="text-white" />
+            <h3 className="text-lg font-semibold text-white">GitHub Gist Sync</h3>
+          </div>
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500">Sync your data to a public GitHub Gist so viewers can see your logs.</p>
+            {syncInfo && (
+              <div className={`text-xs px-3 py-2 rounded-lg ${syncInfo.connected ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                {syncInfo.message}
+              </div>
+            )}
+            <Input label="GitHub Personal Access Token" type="password" value={syncConfig.token}
+              onChange={e => setSyncConfig({ ...syncConfig, token: e.target.value })}
+              placeholder="ghp_..." />
+            <div className="flex gap-2">
+              <Input label="Gist ID" value={syncConfig.gistId}
+                onChange={e => setSyncConfig({ ...syncConfig, gistId: e.target.value })}
+                placeholder="abc123def456" className="flex-1" />
+              <div className="pt-6">
+                <Button size="sm" onClick={handleCreateGist} disabled={syncing} title="Create new gist">
+                  <Cloud size={14} />
+                </Button>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleSyncSave} variant="glass" className="flex-1 justify-center">Save Config</Button>
+              <Button size="sm" onClick={handlePush} disabled={syncing || !isSyncConfigured()} variant="glass" className="flex-1 justify-center">
+                <Upload size={13} /> {syncing ? 'Pushing...' : 'Push'}
+              </Button>
+              <Button size="sm" onClick={handlePull} disabled={syncing || !isSyncConfigured()} variant="glass" className="flex-1 justify-center">
+                <Download size={13} /> {syncing ? 'Pulling...' : 'Pull'}
+              </Button>
+            </div>
+            <details className="text-xs text-gray-600">
+              <summary className="cursor-pointer hover:text-gray-400">How to get a GitHub token</summary>
+              <ol className="mt-2 space-y-1 list-decimal list-inside text-gray-500">
+                <li>Go to GitHub.com → Settings → Developer settings → Personal access tokens → Tokens (classic)</li>
+                <li>Generate a new token with the <strong>gist</strong> scope</li>
+                <li>Copy the token and paste it above</li>
+                <li>Click the <strong>cloud icon</strong> to create a new gist, or enter an existing Gist ID</li>
+              </ol>
+            </details>
           </div>
         </Card>
 
@@ -182,7 +334,7 @@ export default function Settings() {
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-600 mt-4">All data is stored locally in your browser localStorage.</p>
+          <p className="text-xs text-gray-600 mt-4">Data syncs to GitHub Gist when configured.</p>
         </Card>
 
         <Card className="lg:col-span-2">
@@ -193,7 +345,7 @@ export default function Settings() {
           <div className="text-sm text-gray-400 space-y-2">
             <p><strong className="text-white">Version:</strong> 2.0.0 — Ultimate Edition</p>
             <p><strong className="text-white">Tech Stack:</strong> React 19 + Vite + Tailwind CSS + Framer Motion + Recharts</p>
-            <p><strong className="text-white">Features:</strong> Project Management, Daily Logs, Kanban Board, Calendar View, Timeline, Analytics, Media Support (Photos/Videos via Cloudinary & YouTube), Time Tracking, Milestones, Comments, Global Search, Keyboard Shortcuts, Multi-theme, Data Export/Import</p>
+            <p><strong className="text-white">Auth:</strong> Password-protected editing with public read-only viewer mode. Data synced via GitHub Gist.</p>
             <p><strong className="text-white">Deployment:</strong> Automatically deployed to GitHub Pages on every push</p>
           </div>
         </Card>
