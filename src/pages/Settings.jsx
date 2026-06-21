@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Settings as SettingsIcon, Download, Upload, Trash2, Sun, Moon, Monitor, Keyboard, Bell, Database, GitFork, Lock, Unlock, Cloud } from 'lucide-react'
 import { loadData, saveData, exportData, importData, clearNotifications, generateId } from '../data/store'
@@ -162,6 +163,18 @@ export default function Settings() {
     { label: 'Notifications', value: data.notifications?.length || 0 },
     { label: 'Tags', value: data.tags?.length || 0 },
   ] : []
+
+  if (!isOwner) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
+          <Lock size={28} className="text-amber-400" />
+        </div>
+        <p className="text-gray-400 text-lg mb-1">Settings locked</p>
+        <p className="text-gray-600 text-sm mb-5"><Link to="/login" className="text-indigo-400 hover:text-indigo-300 underline">Login</Link> to configure settings</p>
+      </motion.div>
+    )
+  }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
