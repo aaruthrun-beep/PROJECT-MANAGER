@@ -322,7 +322,7 @@ export default function ProjectDetail() {
       <Modal open={showLogModal} onClose={() => setShowLogModal(false)} title="New Log Entry" size="xl">
         <form onSubmit={handleAddLog} className="flex flex-col gap-4">
           <Input label="Title *" value={logForm.title} onChange={e => setLogForm({ ...logForm, title: e.target.value })} placeholder="What did you work on?" required />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Date" type="date" value={logForm.date} onChange={e => setLogForm({ ...logForm, date: e.target.value })} />
             <div className="space-y-1.5">
               <label className="text-sm text-gray-400 block">Mood</label>

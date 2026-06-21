@@ -127,7 +127,7 @@ export default function Projects() {
             <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
               className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 h-24 resize-none" placeholder="What is this project about?" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select label="Status" options={[{ value: 'active', label: 'Active' }, { value: 'paused', label: 'Paused' }, { value: 'completed', label: 'Completed' }]}
               value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} />
             <Select label="Priority" options={priorities} value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })} />

@@ -17,7 +17,11 @@ export default function NotificationBell() {
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
   }, [])
 
   const unread = notifications.filter(n => !n.read).length
@@ -37,7 +41,7 @@ export default function NotificationBell() {
         {open && (
           <motion.div initial={{ opacity: 0, scale: 0.95, y: -10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="absolute right-0 mt-2 glass rounded-2xl shadow-2xl w-80 max-h-96 overflow-hidden border border-white/10">
+            className="absolute right-0 mt-2 glass rounded-2xl shadow-2xl w-80 max-w-[calc(100vw-1.5rem)] max-h-96 overflow-hidden border border-white/10">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <h4 className="text-sm font-semibold text-white">Notifications</h4>
               <div className="flex gap-1">

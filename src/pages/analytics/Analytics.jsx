@@ -19,6 +19,9 @@ export default function Analytics() {
     setStats(getStats())
   }, [])
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
+  const chartHeight = isMobile ? 150 : 200
+
   const totalLogs = data.logEntries.length
   const entriesWithMedia = data.logEntries.filter(e => (e.images?.length || 0) + (e.videos?.length || 0) > 0).length
   const entriesWithMood = data.logEntries.filter(e => e.mood).length
@@ -90,7 +93,7 @@ export default function Analytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <Card>
           <h3 className="text-lg font-semibold text-white mb-4">Entry Trend (14 days)</h3>
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={chartHeight}>
             <LineChart data={lineData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={false} />
@@ -106,11 +109,11 @@ export default function Analytics() {
           {priorityData.length === 0 ? (
             <p className="text-gray-500 text-sm py-8 text-center">No projects yet</p>
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={chartHeight}>
               <BarChart data={priorityData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                 <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={false} />
-                <YAxis dataKey="name" type="category" tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={false} width={80} />
+                <YAxis dataKey="name" type="category" tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={false} width={isMobile ? 60 : 80} />
                 <Tooltip contentStyle={{ background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }} />
                 <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} maxBarSize={20} />
               </BarChart>

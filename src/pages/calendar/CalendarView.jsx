@@ -74,10 +74,10 @@ export default function CalendarView() {
 
                 return (
                   <button key={i} onClick={() => handleDayClick(day)}
-                    className={`relative p-2 rounded-xl text-sm transition-all min-h-[44px] ${!isCurrentMonth ? 'text-gray-700' : isSelected ? 'bg-indigo-500/30 text-white border border-indigo-500/50' : isToday ? 'bg-indigo-500/10 text-white border border-indigo-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
+                    className={`relative p-1 sm:p-2 rounded-xl text-xs sm:text-sm transition-all min-h-[40px] sm:min-h-[44px] ${!isCurrentMonth ? 'text-gray-700' : isSelected ? 'bg-indigo-500/30 text-white border border-indigo-500/50' : isToday ? 'bg-indigo-500/10 text-white border border-indigo-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
                     <span className={`${isToday ? 'font-bold' : ''}`}>{format(day, 'd')}</span>
                     {entryCount > 0 && (
-                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 sm:w-1.5 h-1 sm:h-1.5 rounded-full bg-indigo-400" />
                     )}
                   </button>
                 )
