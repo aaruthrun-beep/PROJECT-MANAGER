@@ -17,6 +17,7 @@ const defaultData = {
 }
 
 export function loadData() {
+  if (_remoteData) return { ...structuredClone(defaultData), ..._remoteData }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
@@ -25,6 +26,33 @@ export function loadData() {
     }
   } catch {}
   return structuredClone(defaultData)
+}
+
+let _remoteData = null
+
+export function getRemoteData() {
+  return _remoteData
+}
+
+export async function tryLoadFromGistParam() {
+  const params = new URLSearchParams(window.location.search)
+  const gistId = params.get('gist')
+  if (!gistId) return null
+  try {
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: { Accept: 'application/vnd.github.v3+json' },
+    })
+    if (!res.ok) return null
+    const gist = await res.json()
+    const file = gist.files?.['project-hub-data.json']
+    if (!file) return null
+    const contentRes = await fetch(file.raw_url)
+    const data = await contentRes.json()
+    _remoteData = data
+    return data
+  } catch {
+    return null
+  }
 }
 
 export function saveData(data) {

@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Routes, Route, useLocation, Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
-import { Menu, Eye } from 'lucide-react'
+import { Menu, Eye, Cloud } from 'lucide-react'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { tryLoadFromGistParam, getRemoteData } from './data/store'
 import Sidebar from './components/Sidebar'
 import GlobalSearch from './components/GlobalSearch'
 import NotificationBell from './components/NotificationBell'
@@ -24,8 +25,19 @@ import Login from './pages/Login'
 
 function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [loadingGist, setLoadingGist] = useState(false)
   const location = useLocation()
   const { isOwner } = useAuth()
+
+  useEffect(() => {
+    const gistId = new URLSearchParams(window.location.search).get('gist')
+    if (gistId && !isOwner) {
+      setLoadingGist(true)
+      tryLoadFromGistParam().finally(() => setLoadingGist(false))
+    }
+  }, [isOwner])
+
+  const isRemote = !!getRemoteData()
 
   return (
     <div className="flex min-h-screen bg-black text-gray-100 dark relative">
@@ -33,11 +45,17 @@ function AppShell() {
       <FloatingOrbs />
       <Sidebar mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 relative z-10">
+        {/* Loading gist */}
+        {loadingGist && (
+          <div className="bg-indigo-500/10 border-b border-indigo-500/20 px-4 py-1.5 text-center text-xs text-indigo-400">
+            Loading shared data...
+          </div>
+        )}
         {/* Viewer banner */}
-        {!isOwner && (
+        {!isOwner && !loadingGist && (
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-1.5 text-center text-xs text-amber-400 flex items-center justify-center gap-1.5">
-            <Eye size={12} />
-            Viewer mode — <Link to="/login" className="underline hover:text-amber-300">Login</Link> to edit
+            {isRemote ? <Cloud size={12} /> : <Eye size={12} />}
+            {isRemote ? 'Viewing shared data via Gist' : 'Viewer mode'} — <Link to="/login" className="underline hover:text-amber-300">Login</Link> to edit
           </div>
         )}
         <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
