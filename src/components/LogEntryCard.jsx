@@ -1,5 +1,8 @@
 import { Calendar, Image, Video, ExternalLink } from 'lucide-react'
 
+const moodEmojis = { productive: '🚀', struggling: '😤', neutral: '😐', breakthrough: '💡', learning: '📚' }
+const moodColors = { productive: 'text-emerald-400', struggling: 'text-red-400', neutral: 'text-gray-400', breakthrough: 'text-purple-400', learning: 'text-sky-400' }
+
 export default function LogEntryCard({ entry, onDelete, onView }) {
   const hasMedia = (entry.images && entry.images.length > 0) || (entry.videos && entry.videos.length > 0)
 
@@ -11,6 +14,7 @@ export default function LogEntryCard({ entry, onDelete, onView }) {
           {new Date(entry.date || entry.createdAt).toLocaleDateString('en-US', {
             weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
           })}
+          {entry.mood && <span className={moodColors[entry.mood]}>{moodEmojis[entry.mood]} {entry.mood}</span>}
         </div>
         <div className="flex gap-2">
           {hasMedia && (

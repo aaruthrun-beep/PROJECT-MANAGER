@@ -1,112 +1,145 @@
 import { useState, useEffect } from 'react'
-import { Plus, Search } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Plus, Search, SlidersHorizontal, LayoutGrid, List, FolderKanban as FolderKanbanIcon } from 'lucide-react'
 import { loadData, addProject, deleteProject } from '../data/store'
+import Modal from '../ui/Modal'
+import Button from '../ui/Button'
+import Input from '../ui/Input'
+import Select from '../ui/Select'
 import ProjectCard from '../components/ProjectCard'
+
+const priorities = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' },
+]
 
 export default function Projects() {
   const [data, setData] = useState({ projects: [] })
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [priorityFilter, setPriorityFilter] = useState('all')
+  const [viewMode, setViewMode] = useState('grid')
   const [showModal, setShowModal] = useState(false)
-  const [form, setForm] = useState({ name: '', description: '', status: 'active' })
+  const [form, setForm] = useState({ name: '', description: '', status: 'active', priority: 'medium', tags: [] })
 
   const refresh = () => setData(loadData())
   useEffect(refresh, [])
 
-  const filtered = data.projects.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.description?.toLowerCase().includes(search.toLowerCase())
-  )
+  let filtered = data.projects
+  if (search) {
+    const q = search.toLowerCase()
+    filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q))
+  }
+  if (statusFilter !== 'all') filtered = filtered.filter(p => (p.status || 'active') === statusFilter)
+  if (priorityFilter !== 'all') filtered = filtered.filter(p => (p.priority || 'medium') === priorityFilter)
 
   const handleCreate = (e) => {
     e.preventDefault()
     if (!form.name.trim()) return
-    addProject({ name: form.name.trim(), description: form.description.trim(), status: form.status })
-    setForm({ name: '', description: '', status: 'active' })
+    addProject({ name: form.name.trim(), description: form.description.trim(), status: form.status, priority: form.priority })
+    setForm({ name: '', description: '', status: 'active', priority: 'medium', tags: [] })
     setShowModal(false)
     refresh()
   }
 
-  const handleDelete = (id) => {
-    if (confirm('Delete this project and all its log entries?')) {
-      deleteProject(id)
-      refresh()
-    }
-  }
-
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-3xl font-bold text-white">Projects</h2>
-          <p className="text-gray-400 mt-1">Manage all your projects</p>
+          <p className="text-gray-400 mt-1">{data.projects.length} total projects</p>
         </div>
-        <button onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/25">
-          <Plus size={18} /> New Project
-        </button>
+        <Button onClick={() => setShowModal(true)} icon={Plus} size="lg">
+          New Project
+        </Button>
       </div>
 
-      <div className="relative mb-6">
-        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-        <input type="text" placeholder="Search projects..." value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 transition-colors" />
+      <div className="flex flex-col md:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+          <input type="text" placeholder="Search projects..." value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 transition-all text-sm" />
+        </div>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+          className="bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-indigo-500/50">
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="paused">Paused</option>
+          <option value="completed">Completed</option>
+        </select>
+        <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}
+          className="bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-indigo-500/50">
+          <option value="all">All Priority</option>
+          {priorities.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+        </select>
+        <div className="flex glass rounded-xl p-0.5 border border-white/10">
+          <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-indigo-500/20 text-indigo-300' : 'text-gray-500 hover:text-white'}`}>
+            <LayoutGrid size={16} />
+          </button>
+          <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-300' : 'text-gray-500 hover:text-white'}`}>
+            <List size={16} />
+          </button>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-500 border border-dashed border-white/10 rounded-2xl">
-          <p className="text-lg mb-2">{data.projects.length === 0 ? 'No projects yet' : 'No projects match your search'}</p>
+        <div className="text-center py-20 text-gray-500 glass rounded-2xl border border-white/10">
+          <FolderKanbanIcon size={48} className="mx-auto mb-3 opacity-30" />
+          <p className="text-lg mb-1">{data.projects.length === 0 ? 'No projects yet' : 'No projects match your filters'}</p>
           {data.projects.length === 0 && (
-            <button onClick={() => setShowModal(true)} className="text-indigo-400 hover:text-indigo-300">Create your first project</button>
+            <Button onClick={() => setShowModal(true)} variant="secondary" className="mt-4">Create your first project</Button>
           )}
         </div>
+      ) : viewMode === 'grid' ? (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filtered.map((p, i) => (
+            <motion.div key={p.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
+              <ProjectCard project={p} onDelete={() => { deleteProject(p.id); refresh() }} />
+            </motion.div>
+          ))}
+        </motion.div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map(p => (
-            <div key={p.id} className="relative group/card">
-              <ProjectCard project={p} />
-              <button onClick={() => handleDelete(p.id)}
-                className="absolute top-3 right-3 opacity-0 group-hover/card:opacity-100 text-red-400 hover:text-red-300 text-xs bg-gray-900/80 px-2 py-1 rounded-lg transition-all">
-                Delete
-              </button>
-            </div>
+        <div className="glass rounded-2xl border border-white/10 overflow-hidden">
+          {filtered.map((p, i) => (
+            <motion.div key={p.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
+              className="flex items-center gap-4 p-4 hover:bg-white/5 transition-all border-b border-white/5 last:border-0">
+              <div className={`w-2 h-2 rounded-full ${p.status === 'active' ? 'bg-emerald-400' : p.status === 'paused' ? 'bg-amber-400' : p.status === 'completed' ? 'bg-blue-400' : 'bg-gray-500'}`} />
+              <div className="flex-1 min-w-0">
+                <Link to={`/projects/${p.id}`} className="text-white font-medium hover:text-indigo-400 transition-colors truncate block">{p.name}</Link>
+                <p className="text-xs text-gray-500 truncate">{p.description || 'No description'}</p>
+              </div>
+              <span className="text-xs text-gray-500 capitalize">{p.priority || 'medium'}</span>
+              <span className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleDateString()}</span>
+              <button onClick={() => { deleteProject(p.id); refresh() }} className="text-xs text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-all">Delete</button>
+            </motion.div>
           ))}
         </div>
       )}
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <h3 className="text-xl font-semibold text-white mb-6">Create New Project</h3>
-            <form onSubmit={handleCreate} className="flex flex-col gap-4">
-              <div>
-                <label className="text-sm text-gray-400 mb-1 block">Project Name *</label>
-                <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50" placeholder="My Awesome Project" required />
-              </div>
-              <div>
-                <label className="text-sm text-gray-400 mb-1 block">Description</label>
-                <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 h-24 resize-none" placeholder="What is this project about?" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-400 mb-1 block">Status</label>
-                <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white focus:outline-none focus:border-indigo-500/50">
-                  <option value="active">Active</option>
-                  <option value="paused">Paused</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-              <div className="flex gap-3 mt-2">
-                <button type="button" onClick={() => setShowModal(false)}
-                  className="flex-1 bg-white/5 hover:bg-white/10 text-gray-300 py-2.5 rounded-xl transition-all">Cancel</button>
-                <button type="submit"
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl transition-all">Create Project</button>
-              </div>
-            </form>
+      <Modal open={showModal} onClose={() => setShowModal(false)} title="Create New Project">
+        <form onSubmit={handleCreate} className="flex flex-col gap-4">
+          <Input label="Project Name *" type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="My Awesome Project" required />
+          <div className="space-y-1.5">
+            <label className="text-sm text-gray-400 block">Description</label>
+            <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 h-24 resize-none" placeholder="What is this project about?" />
           </div>
-        </div>
-      )}
+          <div className="grid grid-cols-2 gap-4">
+            <Select label="Status" options={[{ value: 'active', label: 'Active' }, { value: 'paused', label: 'Paused' }, { value: 'completed', label: 'Completed' }]}
+              value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} />
+            <Select label="Priority" options={priorities} value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })} />
+          </div>
+          <div className="flex gap-3 mt-2">
+            <Button variant="secondary" onClick={() => setShowModal(false)} className="flex-1">Cancel</Button>
+            <Button type="submit" className="flex-1">Create Project</Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }
+
+
