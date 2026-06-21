@@ -50,7 +50,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:flex-col w-60 min-h-screen bg-gray-900/50 border-r border-white/10 p-4 shrink-0 relative z-20">
+      <aside className="hidden md:flex md:flex-col w-60 min-h-screen bg-black/40 border-r border-white/5 p-4 shrink-0 relative z-20">
         <SidebarContent />
       </aside>
 
@@ -62,7 +62,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden" onClick={onMobileClose} />
             <motion.aside initial={{ x: -260 }} animate={{ x: 0 }} exit={{ x: -260 }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed left-0 top-0 bottom-0 w-60 bg-gray-900 border-r border-white/10 p-3 z-50 md:hidden">
+              className="fixed left-0 top-0 bottom-0 w-60 bg-black border-r border-white/5 p-3 z-50 md:hidden">
               <div className="flex justify-end mb-2">
                 <button onClick={onMobileClose} className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5">
                   <X size={20} />

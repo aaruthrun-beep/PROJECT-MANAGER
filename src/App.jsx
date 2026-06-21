@@ -56,7 +56,7 @@ export default function App() {
         <Sidebar mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
         <div className="flex-1 flex flex-col min-w-0 relative z-10">
           <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-            className="sticky top-0 z-30 glass border-b border-white/10 px-2 sm:px-3 lg:px-8 py-2.5 lg:py-3 flex items-center gap-2 backdrop-blur-xl">
+            className="sticky top-0 z-30 bg-black/30 border-b border-white/5 px-2 sm:px-3 lg:px-8 py-2.5 lg:py-3 flex items-center gap-2 backdrop-blur-xl">
             <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 -ml-1 text-gray-400 hover:text-white rounded-lg hover:bg-white/5">
               <Menu size={20} />
             </button>
@@ -74,10 +74,10 @@ export default function App() {
       </div>
       <Toaster position="bottom-center" toastOptions={{
         style: {
-          background: '#1f2937', color: '#f3f4f6',
-          border: '1px solid rgba(255,255,255,0.1)',
+          background: '#000', color: '#f3f4f6',
+          border: '1px solid rgba(255,255,255,0.06)',
           borderRadius: '12px', fontSize: '14px',
-          backdropFilter: 'blur(12px)',
+          backdropFilter: 'blur(16px)',
         },
         success: { iconTheme: { primary: '#10b981', secondary: '#1f2937' } },
         error: { iconTheme: { primary: '#ef4444', secondary: '#1f2937' } },

@@ -41,8 +41,8 @@ export default function NotificationBell() {
         {open && (
           <motion.div initial={{ opacity: 0, scale: 0.95, y: -10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="absolute right-0 mt-2 glass rounded-2xl shadow-2xl w-80 max-w-[calc(100vw-1.5rem)] max-h-96 overflow-hidden border border-white/10">
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
+            className="absolute right-0 mt-2 bg-black/50 backdrop-blur-2xl rounded-2xl shadow-2xl w-80 max-w-[calc(100vw-1.5rem)] max-h-96 overflow-hidden border border-white/5">
+            <div className="flex items-center justify-between p-4 border-b border-white/5">
               <h4 className="text-sm font-semibold text-white">Notifications</h4>
               <div className="flex gap-1">
                 <button onClick={() => { markAllNotificationsRead(); refresh() }} className="text-xs text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-all" title="Mark all read">
@@ -62,7 +62,7 @@ export default function NotificationBell() {
               ) : (
                 notifications.slice(0, 20).map((n, i) => (
                   <div key={n.id || i} onClick={() => { markNotificationRead(n.id); refresh() }}
-                    className={`flex items-start gap-3 px-4 py-3 hover:bg-white/5 cursor-pointer transition-all border-b border-white/5 last:border-0 ${n.read ? 'opacity-60' : ''}`}>
+                    className={`flex items-start gap-3 px-4 py-3 hover:bg-white/[0.03] cursor-pointer transition-all border-b border-white/[0.03] last:border-0 ${n.read ? 'opacity-50' : ''}`}>
                     <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.type === 'error' ? 'bg-red-400' : n.type === 'success' ? 'bg-emerald-400' : 'bg-indigo-400'}`} />
                     <p className="text-sm text-gray-300">{n.message}</p>
                   </div>

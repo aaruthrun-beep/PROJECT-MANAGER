@@ -54,8 +54,8 @@ export default function GlobalSearch() {
               className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setOpen(false)} />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: -20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -20 }} transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative glass rounded-2xl shadow-2xl w-full max-w-xl max-h-[80vh] flex flex-col overflow-hidden">
-              <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 border-b border-white/10">
+              className="relative bg-black/60 backdrop-blur-2xl rounded-2xl shadow-2xl w-full max-w-xl max-h-[80vh] flex flex-col overflow-hidden border border-white/5">
+              <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 border-b border-white/5">
                 <Search size={16} className="text-gray-400 shrink-0" />
                 <input ref={inputRef} type="text" value={query} onChange={e => setQuery(e.target.value)}
                   placeholder="Search anything..."
@@ -74,7 +74,7 @@ export default function GlobalSearch() {
                     <p className="text-[10px] text-gray-500 px-3 py-1.5 font-medium uppercase tracking-wider">Projects</p>
                     {results.projects.map(p => (
                       <button key={p.id} onClick={() => { navigate(`/projects/${p.id}`); setOpen(false) }}
-                        className="w-full flex items-center gap-2 sm:gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-left transition-all active:scale-[0.98]">
+                        className="w-full flex items-center gap-2 sm:gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.03] text-left transition-all active:scale-[0.98]">
                         <FolderKanban size={15} className="text-indigo-400 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-white text-sm truncate">{p.name}</p>
