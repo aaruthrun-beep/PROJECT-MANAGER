@@ -9,16 +9,12 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [show, setShow] = useState(false)
   const [error, setError] = useState('')
-  const { login, hasPassword } = useAuth()
+  const { login } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = (e) => {
     e.preventDefault()
     setError('')
-    if (!hasPassword()) {
-      setError('No password set. Go to Settings first.')
-      return
-    }
     if (login(password)) {
       navigate('/')
     } else {
@@ -56,7 +52,7 @@ export default function Login() {
         </form>
 
         <p className="text-center text-xs text-gray-600 mt-6">
-          Set or change your password in Settings
+          Default password: <span className="text-gray-400 font-mono">admin</span> — change it in Settings
         </p>
       </motion.div>
     </div>

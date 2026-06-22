@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { setAuthState } from '../data/store'
 
 const AUTH_KEY = 'project_hub_auth'
+const DEFAULT_PASS = 'admin'
 
 const AuthContext = createContext(null)
 
@@ -33,9 +34,8 @@ export function AuthProvider({ children }) {
 
   const login = useCallback((password) => {
     const stored = localStorage.getItem('project_hub_pass')
-    if (!stored) return false
-    const hash = stored
-    if (hash === btoa(password)) {
+    const expected = stored || btoa(DEFAULT_PASS)
+    if (expected === btoa(password)) {
       const session = { username: 'owner', expires: Date.now() + 7 * 24 * 60 * 60 * 1000 }
       localStorage.setItem(AUTH_KEY, JSON.stringify(session))
       setUser({ username: 'owner' })
