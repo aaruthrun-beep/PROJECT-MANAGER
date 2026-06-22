@@ -164,15 +164,15 @@ export async function uploadImageToRepo(file) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
+    console.error('[ImageUpload] GitHub API error:', res.status, err)
     const msg = err.message || `GitHub API error: ${res.status}`
-    if (res.status === 403) throw new Error(`Token missing repo scope or rate limited — ${msg}`)
-    if (res.status === 404) throw new Error(`Repo/owner not found or token has no access — check Settings`)
-    if (res.status === 422) throw new Error(`Invalid request — check branch name and path`)
+    if (res.status === 403) throw new Error(`Token needs repo scope — check token permissions`)
+    if (res.status === 404) throw new Error(`Repo/owner not found — check Settings`)
+    if (res.status === 422) throw new Error(`Bad request — check branch and path`)
     throw new Error(msg)
   }
 
-  const data = await res.json()
-  return data.content.download_url
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filepath}`
 }
 
 export async function syncStatus() {
