@@ -7,6 +7,7 @@ import Button from '../ui/Button'
 import Badge from '../ui/Badge'
 import Modal from '../ui/Modal'
 import Input from '../ui/Input'
+import ImageUpload from '../ui/ImageUpload'
 import LogEntryCard from '../components/LogEntryCard'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -19,7 +20,7 @@ const moods = [
   { value: 'learning', label: 'Learning', color: 'sky', emoji: '📚' },
 ]
 
-const emptyForm = { title: '', content: '', date: new Date().toISOString().split('T')[0], projectId: '', mood: null, tags: [], pinned: false }
+const emptyForm = { title: '', content: '', date: new Date().toISOString().split('T')[0], projectId: '', mood: null, tags: [], pinned: false, images: [], videos: [] }
 
 export default function DailyLog() {
   const { isOwner } = useAuth()
@@ -33,7 +34,7 @@ export default function DailyLog() {
   const [viewTab, setViewTab] = useState('content')
   const [showMarkdown, setShowMarkdown] = useState(false)
   const [form, setForm] = useState({ ...emptyForm })
-  const [mediaUrls, setMediaUrls] = useState({ images: '', videos: '' })
+  const [videosText, setVideosText] = useState('')
 
   const refresh = useCallback(() => setData(loadData()), [])
 
@@ -65,7 +66,7 @@ export default function DailyLog() {
   const openCreate = () => {
     setEditEntry(null)
     setForm({ ...emptyForm })
-    setMediaUrls({ images: '', videos: '' })
+    setVideosText('')
     setShowModal(true)
   }
 
@@ -79,11 +80,10 @@ export default function DailyLog() {
       mood: entry.mood || null,
       tags: entry.tags || [],
       pinned: entry.pinned || false,
+      images: entry.images || [],
+      videos: entry.videos || [],
     })
-    setMediaUrls({
-      images: (entry.images || []).join('\n'),
-      videos: (entry.videos || []).join('\n'),
-    })
+    setVideosText((entry.videos || []).join('\n'))
     setShowModal(true)
     setViewEntry(null)
   }
@@ -91,17 +91,16 @@ export default function DailyLog() {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!form.title.trim()) return
-    const images = mediaUrls.images ? mediaUrls.images.split('\n').map(s => s.trim()).filter(Boolean) : []
-    const videos = mediaUrls.videos ? mediaUrls.videos.split('\n').map(s => s.trim()).filter(Boolean) : []
+    const videos = videosText ? videosText.split('\n').map(s => s.trim()).filter(Boolean) : []
     if (editEntry) {
-      updateLogEntry(editEntry.id, { ...form, images, videos })
+      updateLogEntry(editEntry.id, { ...form, images: form.images, videos })
       toast.success('Entry updated')
     } else {
-      addLogEntry({ ...form, images, videos })
+      addLogEntry({ ...form, images: form.images, videos })
       toast.success('Entry created')
     }
     setForm({ ...emptyForm })
-    setMediaUrls({ images: '', videos: '' })
+    setVideosText('')
     setEditEntry(null)
     setShowModal(false)
     refresh()
@@ -326,14 +325,10 @@ export default function DailyLog() {
             <input type="text" value={form.tags.join(', ')} onChange={e => setForm({ ...form, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
               className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 text-sm" placeholder="design, frontend, bugfix" />
           </div>
-          <div className="space-y-1.5">
-            <label className="text-sm text-gray-400 block">Images (Cloudinary URLs, one per line)</label>
-            <textarea value={mediaUrls.images} onChange={e => setMediaUrls({ ...mediaUrls, images: e.target.value })}
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 h-16 resize-none text-xs" />
-          </div>
+          <ImageUpload urls={form.images} onChange={(urls) => setForm({ ...form, images: urls })} />
           <div className="space-y-1.5">
             <label className="text-sm text-gray-400 block">Videos (YouTube URLs, one per line)</label>
-            <textarea value={mediaUrls.videos} onChange={e => setMediaUrls({ ...mediaUrls, videos: e.target.value })}
+            <textarea value={videosText} onChange={e => setVideosText(e.target.value)}
               className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 h-16 resize-none text-xs" />
           </div>
           <div className="flex gap-3">

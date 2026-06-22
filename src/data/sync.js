@@ -111,6 +111,64 @@ export async function createGist(token, data) {
   return { gistId: gist.id, gistUrl: gist.html_url }
 }
 
+const IMG_CONFIG_KEY = 'project_hub_img_host'
+
+export function getImageConfig() {
+  try {
+    const raw = localStorage.getItem(IMG_CONFIG_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return { owner: '', repo: '', path: 'assets/images', branch: 'main' }
+}
+
+export function saveImageConfig(config) {
+  localStorage.setItem(IMG_CONFIG_KEY, JSON.stringify(config))
+}
+
+export async function uploadImageToRepo(file) {
+  const { token } = getConfig()
+  const { owner, repo, path, branch } = getImageConfig()
+  if (!token || !owner || !repo) throw new Error('Configure image hosting in Settings first')
+
+  const ext = file.name.split('.').pop()
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`
+  const filepath = `${path}/${filename}`
+
+  const reader = new FileReader()
+  const content = await new Promise((resolve, reject) => {
+    reader.onload = () => {
+      const base64 = reader.result.split(',')[1]
+      resolve(base64)
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+
+  const body = {
+    message: `Upload image ${filename}`,
+    content,
+    branch,
+  }
+
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filepath}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/vnd.github.v3+json',
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.message || `GitHub API error: ${res.status}`)
+  }
+
+  const data = await res.json()
+  return data.content.download_url
+}
+
 export async function syncStatus() {
   const { token, gistId } = getConfig()
   if (!token || !gistId) return { connected: false, message: 'Not configured' }

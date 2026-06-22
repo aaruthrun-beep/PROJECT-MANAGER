@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Settings as SettingsIcon, Download, Upload, Trash2, Sun, Moon, Monitor, Keyboard, Bell, Database, GitFork, Lock, Unlock, Cloud } from 'lucide-react'
+import { Settings as SettingsIcon, Download, Upload, Trash2, Sun, Moon, Monitor, Keyboard, Bell, Database, GitFork, Lock, Unlock, Cloud, Image } from 'lucide-react'
 import { loadData, saveData, exportData, importData, clearNotifications, generateId } from '../data/store'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
-import { getSyncConfig, saveSyncConfig, isSyncConfigured, pushToGist, pullFromGist, createGist, syncStatus } from '../data/sync'
+import { getSyncConfig, saveSyncConfig, isSyncConfigured, pushToGist, pullFromGist, createGist, syncStatus, getImageConfig, saveImageConfig } from '../data/sync'
 import Card from '../ui/Card'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
@@ -22,6 +22,7 @@ export default function Settings() {
   const [syncConfig, setSyncConfig] = useState({ token: '', gistId: '' })
   const [syncing, setSyncing] = useState(false)
   const [syncInfo, setSyncInfo] = useState(null)
+  const [imgConfig, setImgConfig] = useState({ owner: '', repo: '', path: 'assets/images', branch: 'main' })
 
   useEffect(() => { setData(loadData()) }, [])
 
@@ -31,6 +32,7 @@ export default function Settings() {
     if (c.token && c.gistId) {
       syncStatus().then(setSyncInfo)
     }
+    setImgConfig(getImageConfig())
   }, [])
 
   const handleExport = () => exportData()
@@ -94,6 +96,11 @@ export default function Settings() {
       syncStatus().then(setSyncInfo)
     }
     toast.success('Sync config saved')
+  }
+
+  const handleImgSave = () => {
+    saveImageConfig(imgConfig)
+    toast.success('Image hosting config saved')
   }
 
   const handlePush = async () => {
@@ -307,6 +314,30 @@ export default function Settings() {
                 <li>Click the <strong>cloud icon</strong> to create a new gist, or enter an existing Gist ID</li>
               </ol>
             </details>
+          </div>
+        </Card>
+
+        {/* Image Hosting */}
+        <Card>
+          <div className="flex items-center gap-2 mb-4">
+            <Image size={18} className="text-purple-400" />
+            <h3 className="text-lg font-semibold text-white">Image Hosting</h3>
+          </div>
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500">Upload images to your GitHub repo via drag & drop. Uses the same token as Gist sync (needs <strong>repo</strong> scope).</p>
+            <Input label="Repository owner" value={imgConfig.owner}
+              onChange={e => setImgConfig({ ...imgConfig, owner: e.target.value })}
+              placeholder="your-username" />
+            <Input label="Repository name" value={imgConfig.repo}
+              onChange={e => setImgConfig({ ...imgConfig, repo: e.target.value })}
+              placeholder="your-repo" />
+            <Input label="Folder path" value={imgConfig.path}
+              onChange={e => setImgConfig({ ...imgConfig, path: e.target.value })}
+              placeholder="assets/images" />
+            <Input label="Branch" value={imgConfig.branch}
+              onChange={e => setImgConfig({ ...imgConfig, branch: e.target.value })}
+              placeholder="main" />
+            <Button onClick={handleImgSave} size="sm" variant="glass" className="w-full justify-center">Save Image Config</Button>
           </div>
         </Card>
 

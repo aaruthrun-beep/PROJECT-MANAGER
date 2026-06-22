@@ -10,6 +10,7 @@ import Badge from '../ui/Badge'
 import Modal from '../ui/Modal'
 import Input from '../ui/Input'
 import LogEntryCard from '../components/LogEntryCard'
+import ImageUpload from '../ui/ImageUpload'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 
@@ -35,7 +36,7 @@ export default function ProjectDetail() {
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({})
   const [logForm, setLogForm] = useState({ title: '', content: '', date: new Date().toISOString().split('T')[0], images: [], videos: [], mood: null })
-  const [mediaUrls, setMediaUrls] = useState({ images: '', videos: '' })
+  const [videosText, setVideosText] = useState('')
   const [milestoneForm, setMilestoneForm] = useState({ name: '', dueDate: '' })
   const [timeForm, setTimeForm] = useState({ duration: 30, description: '', date: new Date().toISOString().split('T')[0] })
   const [commentForm, setCommentForm] = useState({ text: '' })
@@ -70,11 +71,10 @@ export default function ProjectDetail() {
   const handleAddLog = (e) => {
     e.preventDefault()
     if (!logForm.title.trim()) return
-    const images = mediaUrls.images ? mediaUrls.images.split('\n').map(s => s.trim()).filter(Boolean) : []
-    const videos = mediaUrls.videos ? mediaUrls.videos.split('\n').map(s => s.trim()).filter(Boolean) : []
-    addLogEntry({ ...logForm, projectId: id, images, videos })
+    const videos = videosText ? videosText.split('\n').map(s => s.trim()).filter(Boolean) : []
+    addLogEntry({ ...logForm, projectId: id, images: logForm.images, videos })
     setLogForm({ title: '', content: '', date: new Date().toISOString().split('T')[0], images: [], videos: [], mood: null })
-    setMediaUrls({ images: '', videos: '' })
+    setVideosText('')
     setShowLogModal(false)
     refresh()
   }
@@ -344,14 +344,10 @@ export default function ProjectDetail() {
             <textarea value={logForm.content} onChange={e => setLogForm({ ...logForm, content: e.target.value })}
               className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 h-32 resize-none font-mono text-sm" placeholder="Write your notes... Markdown is supported" />
           </div>
-          <div className="space-y-1.5">
-            <label className="text-sm text-gray-400 block">Images (Cloudinary URLs, one per line)</label>
-            <textarea value={mediaUrls.images} onChange={e => setMediaUrls({ ...mediaUrls, images: e.target.value })}
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 h-16 resize-none text-xs" placeholder="https://res.cloudinary.com/..." />
-          </div>
+          <ImageUpload urls={logForm.images} onChange={(urls) => setLogForm({ ...logForm, images: urls })} />
           <div className="space-y-1.5">
             <label className="text-sm text-gray-400 block">Videos (YouTube URLs, one per line)</label>
-            <textarea value={mediaUrls.videos} onChange={e => setMediaUrls({ ...mediaUrls, videos: e.target.value })}
+            <textarea value={videosText} onChange={e => setVideosText(e.target.value)}
               className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 h-16 resize-none text-xs" placeholder="https://www.youtube.com/watch?v=..." />
           </div>
           <div className="flex gap-3">
