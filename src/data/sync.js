@@ -118,8 +118,13 @@ export function getImageConfig() {
     const raw = localStorage.getItem(IMG_CONFIG_KEY)
     if (raw) {
       const c = JSON.parse(raw)
-      if (c.path) c.path = c.path.trim()
-      return c
+      return {
+        token: (c.token || '').trim(),
+        owner: (c.owner || '').trim(),
+        repo: (c.repo || '').trim(),
+        path: (c.path || 'assets/images').replace(/^\/+|\/+$/g, '').trim(),
+        branch: (c.branch || 'main').trim(),
+      }
     }
   } catch {}
   return { token: '', owner: '', repo: '', path: 'assets/images', branch: 'main' }
@@ -132,13 +137,15 @@ export function saveImageConfig(config) {
 export async function uploadImageToRepo(file) {
   const imgConfig = getImageConfig()
   const fallbackToken = getConfig().token
-  const token = imgConfig.token || fallbackToken
-  const { owner, repo, path, branch } = imgConfig
+  const token = (imgConfig.token || fallbackToken).trim()
+  const owner = (imgConfig.owner || '').trim()
+  const repo = (imgConfig.repo || '').trim()
+  const branch = (imgConfig.branch || 'main').trim()
+  const safePath = (imgConfig.path || 'assets/images').replace(/^\/+|\/+$/g, '').trim()
   if (!token || !owner || !repo) throw new Error('Configure image hosting in Settings first')
 
   const ext = file.name.split('.').pop()
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`
-  const safePath = (path || 'assets/images').replace(/^\/+|\/+$/g, '').trim()
   const filepath = `${safePath}/${filename}`
 
   const reader = new FileReader()
