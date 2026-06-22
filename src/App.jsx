@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Routes, Route, useLocation, Link } from 'react-router-dom'
+import { Routes, Route, useLocation, useNavigate, Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
 import { Menu, Eye, Cloud } from 'lucide-react'
@@ -27,7 +27,15 @@ function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loadingGist, setLoadingGist] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
   const { isOwner } = useAuth()
+
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash.startsWith('#log-')) {
+      navigate('/daily-log', { replace: true })
+    }
+  }, [navigate])
 
   useEffect(() => {
     const gistId = new URLSearchParams(window.location.search).get('gist')
