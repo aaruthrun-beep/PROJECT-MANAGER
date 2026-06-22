@@ -40,7 +40,7 @@ function AppShell() {
   const isRemote = !!getRemoteData()
 
   return (
-    <div className="flex min-h-screen bg-black text-gray-100 dark relative">
+    <div className="flex min-h-screen bg-black text-gray-100 relative">
       <ParticleBackground />
       <FloatingOrbs />
       <Sidebar mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />

@@ -4,7 +4,7 @@ const ThemeContext = createContext()
 
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(() => {
-    return localStorage.getItem('hub_theme') || 'system'
+    return localStorage.getItem('hub_theme') || 'dark'
   })
 
   const setTheme = (t) => {
