@@ -118,7 +118,7 @@ export function getImageConfig() {
     const raw = localStorage.getItem(IMG_CONFIG_KEY)
     if (raw) return JSON.parse(raw)
   } catch {}
-  return { owner: '', repo: '', path: 'assets/images', branch: 'main' }
+  return { token: '', owner: '', repo: '', path: 'assets/images', branch: 'main' }
 }
 
 export function saveImageConfig(config) {
@@ -126,8 +126,10 @@ export function saveImageConfig(config) {
 }
 
 export async function uploadImageToRepo(file) {
-  const { token } = getConfig()
-  const { owner, repo, path, branch } = getImageConfig()
+  const imgConfig = getImageConfig()
+  const fallbackToken = getConfig().token
+  const token = imgConfig.token || fallbackToken
+  const { owner, repo, path, branch } = imgConfig
   if (!token || !owner || !repo) throw new Error('Configure image hosting in Settings first')
 
   const ext = file.name.split('.').pop()
@@ -162,7 +164,11 @@ export async function uploadImageToRepo(file) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error(err.message || `GitHub API error: ${res.status}`)
+    const msg = err.message || `GitHub API error: ${res.status}`
+    if (res.status === 403) throw new Error(`Token missing repo scope or rate limited — ${msg}`)
+    if (res.status === 404) throw new Error(`Repo/owner not found or token has no access — check Settings`)
+    if (res.status === 422) throw new Error(`Invalid request — check branch name and path`)
+    throw new Error(msg)
   }
 
   const data = await res.json()

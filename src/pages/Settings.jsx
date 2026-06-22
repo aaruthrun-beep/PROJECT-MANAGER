@@ -22,7 +22,7 @@ export default function Settings() {
   const [syncConfig, setSyncConfig] = useState({ token: '', gistId: '' })
   const [syncing, setSyncing] = useState(false)
   const [syncInfo, setSyncInfo] = useState(null)
-  const [imgConfig, setImgConfig] = useState({ owner: '', repo: '', path: 'assets/images', branch: 'main' })
+  const [imgConfig, setImgConfig] = useState({ token: '', owner: '', repo: '', path: 'assets/images', branch: 'main' })
 
   useEffect(() => { setData(loadData()) }, [])
 
@@ -99,7 +99,7 @@ export default function Settings() {
   }
 
   const handleImgSave = () => {
-    saveImageConfig(imgConfig)
+    saveImageConfig({ ...imgConfig, path: imgConfig.path.replace(/^\/+|\/+$/g, '') })
     toast.success('Image hosting config saved')
   }
 
@@ -324,7 +324,10 @@ export default function Settings() {
             <h3 className="text-lg font-semibold text-white">Image Hosting</h3>
           </div>
           <div className="space-y-3">
-            <p className="text-xs text-gray-500">Upload images to your GitHub repo via drag & drop. Uses the same token as Gist sync (needs <strong>repo</strong> scope).</p>
+            <p className="text-xs text-gray-500">Upload images to your GitHub repo via drag & drop. Token needs <strong>repo</strong> scope (or <strong>public_repo</strong> for public repos).</p>
+            <Input label="GitHub Token (repo scope)" type="password" value={imgConfig.token}
+              onChange={e => setImgConfig({ ...imgConfig, token: e.target.value })}
+              placeholder="ghp_..." />
             <Input label="Repository owner" value={imgConfig.owner}
               onChange={e => setImgConfig({ ...imgConfig, owner: e.target.value })}
               placeholder="your-username" />
