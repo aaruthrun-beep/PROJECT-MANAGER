@@ -99,7 +99,7 @@ export default function Settings() {
   }
 
   const handleImgSave = () => {
-    saveImageConfig({ ...imgConfig, path: imgConfig.path.replace(/^\/+|\/+$/g, '') })
+    saveImageConfig({ ...imgConfig, path: imgConfig.path.replace(/^\/+|\/+$/g, '').trim() })
     toast.success('Image hosting config saved')
   }
 

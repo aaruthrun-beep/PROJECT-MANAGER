@@ -116,7 +116,11 @@ const IMG_CONFIG_KEY = 'project_hub_img_host'
 export function getImageConfig() {
   try {
     const raw = localStorage.getItem(IMG_CONFIG_KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const c = JSON.parse(raw)
+      if (c.path) c.path = c.path.trim()
+      return c
+    }
   } catch {}
   return { token: '', owner: '', repo: '', path: 'assets/images', branch: 'main' }
 }
@@ -134,7 +138,8 @@ export async function uploadImageToRepo(file) {
 
   const ext = file.name.split('.').pop()
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`
-  const filepath = `${path}/${filename}`
+  const safePath = (path || 'assets/images').replace(/^\/+|\/+$/g, '').trim()
+  const filepath = `${safePath}/${filename}`
 
   const reader = new FileReader()
   const content = await new Promise((resolve, reject) => {
