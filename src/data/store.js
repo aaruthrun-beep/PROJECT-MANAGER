@@ -69,6 +69,7 @@ export async function tryLoadFromGistParam() {
 }
 
 export function saveData(data) {
+  if (!requireAuth()) return
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   tryAutoSync(data)
 }
@@ -321,7 +322,6 @@ export function clearNotifications() {
 
 // --- Export/Import ---
 export function exportData() {
-  if (!requireAuth()) return
   const data = loadData()
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)

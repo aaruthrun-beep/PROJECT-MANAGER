@@ -317,7 +317,7 @@ export default function Settings() {
           </div>
           <div className="space-y-3">
             <Button onClick={handleExport} icon={Download} variant="glass" className="w-full justify-start">Export Data (JSON)</Button>
-            <Button onClick={() => setShowImport(!showImport)} icon={Upload} variant="glass" className="w-full justify-start">Import Data</Button>
+            {isOwner && <Button onClick={() => setShowImport(!showImport)} icon={Upload} variant="glass" className="w-full justify-start">Import Data</Button>}
             {showImport && (
               <div className="space-y-2">
                 <textarea value={importText} onChange={e => setImportText(e.target.value)}
@@ -329,8 +329,8 @@ export default function Settings() {
               </div>
             )}
             <hr className="border-white/5" />
-            <Button onClick={handleAddSampleData} variant="secondary" className="w-full justify-start">Add Sample Data</Button>
-            <Button onClick={handleClearAll} variant="danger" icon={Trash2} className="w-full justify-start">Clear All Data</Button>
+            {isOwner && <Button onClick={handleAddSampleData} variant="secondary" className="w-full justify-start">Add Sample Data</Button>}
+            {isOwner && <Button onClick={handleClearAll} variant="danger" icon={Trash2} className="w-full justify-start">Clear All Data</Button>}
           </div>
         </Card>
 
