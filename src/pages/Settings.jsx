@@ -164,7 +164,7 @@ export default function Settings() {
     { label: 'Tags', value: data.tags?.length || 0 },
   ] : []
 
-  if (!isOwner) {
+  if (!isOwner && hasPassword()) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
