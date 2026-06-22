@@ -40,7 +40,7 @@ function AppShell() {
   const isRemote = !!getRemoteData()
 
   return (
-    <div className="flex min-h-screen bg-black text-gray-100 relative">
+    <div className="flex min-h-screen relative">
       <ParticleBackground />
       <FloatingOrbs />
       <Sidebar mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
@@ -108,13 +108,12 @@ export default function App() {
         </Routes>
         <Toaster position="bottom-center" toastOptions={{
           style: {
-            background: '#000', color: '#f3f4f6',
-            border: '1px solid rgba(255,255,255,0.06)',
+            background: '#111', color: '#f3f4f6',
+            border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '12px', fontSize: '14px',
-            backdropFilter: 'blur(16px)',
           },
-          success: { iconTheme: { primary: '#10b981', secondary: '#000' } },
-          error: { iconTheme: { primary: '#ef4444', secondary: '#000' } },
+          success: { iconTheme: { primary: '#10b981', secondary: '#111' } },
+          error: { iconTheme: { primary: '#ef4444', secondary: '#111' } },
         }} />
       </AuthProvider>
     </ThemeProvider>
