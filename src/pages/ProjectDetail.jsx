@@ -11,6 +11,7 @@ import Modal from '../ui/Modal'
 import Input from '../ui/Input'
 import LogEntryCard from '../components/LogEntryCard'
 import ImageUpload from '../ui/ImageUpload'
+import Timer from '../ui/Timer'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 
@@ -230,6 +231,7 @@ export default function ProjectDetail() {
 
             {activeTab === 'time' && (
               <>
+                {isOwner && <Timer onLog={(t) => { addTimeEntry({ ...t, projectId: id, date: new Date().toISOString().split('T')[0] }); refresh() }} />}
                 <div className="flex justify-between items-center mb-2">
                   <p className="text-sm text-gray-400">Total: <span className="text-white font-medium">{Math.round(totalTime / 60)}h {totalTime % 60}m</span></p>
                   {isOwner && <Button size="sm" variant="secondary" onClick={() => setShowTimeModal(true)} icon={Clock}>Log Time</Button>}
