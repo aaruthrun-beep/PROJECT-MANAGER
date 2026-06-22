@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Calendar, Clock, Flag, MessageSquare, BarChart3 } from 'lucide-react'
 import { getProject, updateProject, deleteProject, getLogEntries, addLogEntry, deleteLogEntry, getMilestones, addMilestone, updateMilestone, deleteMilestone, addComment, getComments, deleteComment, addTimeEntry, getTimeEntries, getTotalTimeForProject, addTag } from '../data/store'
+import { useAuth } from '../context/AuthContext'
 import Card from '../ui/Card'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
@@ -18,6 +19,7 @@ const statusColors = { active: 'emerald', paused: 'amber', completed: 'blue' }
 export default function ProjectDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { isOwner } = useAuth()
   const [project, setProject] = useState(null)
   const [entries, setEntries] = useState([])
   const [milestones, setMilestones] = useState([])
@@ -135,12 +137,12 @@ export default function ProjectDetail() {
               <h2 className="text-3xl font-bold text-white">{project.name}</h2>
               <Badge color={statusColors[project.status] || 'gray'}>{project.status || 'active'}</Badge>
               <Badge color={priorityColors[project.priority] || 'gray'}>{project.priority || 'medium'}</Badge>
-              <Button size="sm" variant="ghost" onClick={() => { setEditForm({ name: project.name, description: project.description || '', status: project.status || 'active', priority: project.priority || 'medium' }); setEditing(true) }}>Edit</Button>
-              <Button size="sm" variant="ghost" onClick={handleDelete} className="text-red-400">Delete</Button>
+              {isOwner && <Button size="sm" variant="ghost" onClick={() => { setEditForm({ name: project.name, description: project.description || '', status: project.status || 'active', priority: project.priority || 'medium' }); setEditing(true) }}>Edit</Button>}
+              {isOwner && <Button size="sm" variant="ghost" onClick={handleDelete} className="text-red-400">Delete</Button>}
             </div>
           )}
         </div>
-        <Button onClick={() => setShowLogModal(true)} icon={Calendar}>Add Log</Button>
+        {isOwner && <Button onClick={() => setShowLogModal(true)} icon={Calendar}>Add Log</Button>}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
@@ -191,11 +193,11 @@ export default function ProjectDetail() {
               <>
                 {entries.length === 0 ? (
                   <Card className="text-center py-10">
-                    <p className="text-gray-500 mb-2">No log entries</p>
-                    <Button variant="secondary" size="sm" onClick={() => setShowLogModal(true)}>Add first entry</Button>
-                  </Card>
+                      <p className="text-gray-500 mb-2">No log entries</p>
+                      {isOwner && <Button variant="secondary" size="sm" onClick={() => setShowLogModal(true)}>Add first entry</Button>}
+                    </Card>
                 ) : (
-                  entries.map(e => <LogEntryCard key={e.id} entry={e} onDelete={() => { deleteLogEntry(e.id); refresh() }} />)
+                  entries.map(e => <LogEntryCard key={e.id} entry={e} onDelete={isOwner ? () => { deleteLogEntry(e.id); refresh() } : undefined} />)
                 )}
               </>
             )}
@@ -203,7 +205,7 @@ export default function ProjectDetail() {
             {activeTab === 'milestones' && (
               <>
                 <div className="flex justify-end mb-2">
-                  <Button size="sm" variant="secondary" onClick={() => setShowMilestoneModal(true)} icon={Flag}>Add Milestone</Button>
+                  {isOwner && <Button size="sm" variant="secondary" onClick={() => setShowMilestoneModal(true)} icon={Flag}>Add Milestone</Button>}
                 </div>
                 {milestones.length === 0 ? (
                   <Card className="text-center py-10">
@@ -219,7 +221,7 @@ export default function ProjectDetail() {
                         <p className={`text-white text-sm font-medium ${m.completed ? 'line-through text-gray-500' : ''}`}>{m.name}</p>
                         {m.dueDate && <p className="text-xs text-gray-500">Due: {format(new Date(m.dueDate), 'MMM d, yyyy')}</p>}
                       </div>
-                      <button onClick={() => { deleteMilestone(m.id); refresh() }} className="text-xs text-red-400 hover:text-red-300">Delete</button>
+                      {isOwner && <button onClick={() => { deleteMilestone(m.id); refresh() }} className="text-xs text-red-400 hover:text-red-300">Delete</button>}
                     </Card>
                   ))
                 )}
@@ -230,7 +232,7 @@ export default function ProjectDetail() {
               <>
                 <div className="flex justify-between items-center mb-2">
                   <p className="text-sm text-gray-400">Total: <span className="text-white font-medium">{Math.round(totalTime / 60)}h {totalTime % 60}m</span></p>
-                  <Button size="sm" variant="secondary" onClick={() => setShowTimeModal(true)} icon={Clock}>Log Time</Button>
+                  {isOwner && <Button size="sm" variant="secondary" onClick={() => setShowTimeModal(true)} icon={Clock}>Log Time</Button>}
                 </div>
                 {timeEntries.length === 0 ? (
                   <Card className="text-center py-10">
@@ -254,7 +256,7 @@ export default function ProjectDetail() {
             {activeTab === 'comments' && (
               <>
                 <div className="flex justify-end mb-2">
-                  <Button size="sm" variant="secondary" onClick={() => setShowCommentModal(true)} icon={MessageSquare}>Add Comment</Button>
+                  {isOwner && <Button size="sm" variant="secondary" onClick={() => setShowCommentModal(true)} icon={MessageSquare}>Add Comment</Button>}
                 </div>
                 {comments.length === 0 ? (
                   <Card className="text-center py-10"><p className="text-gray-500">No comments</p></Card>

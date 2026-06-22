@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Plus, Search, SlidersHorizontal, LayoutGrid, List, FolderKanban as FolderKanbanIcon } from 'lucide-react'
 import { loadData, addProject, deleteProject } from '../data/store'
+import { useAuth } from '../context/AuthContext'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
@@ -17,6 +18,7 @@ const priorities = [
 ]
 
 export default function Projects() {
+  const { isOwner } = useAuth()
   const [data, setData] = useState({ projects: [] })
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -52,9 +54,11 @@ export default function Projects() {
           <h2 className="text-3xl font-bold text-white">Projects</h2>
           <p className="text-gray-400 mt-1">{data.projects.length} total projects</p>
         </div>
-        <Button onClick={() => setShowModal(true)} icon={Plus} size="lg">
-          New Project
-        </Button>
+        {isOwner && (
+          <Button onClick={() => setShowModal(true)} icon={Plus} size="lg">
+            New Project
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col md:flex-row gap-3 mb-6">
@@ -89,7 +93,7 @@ export default function Projects() {
         <div className="text-center py-20 text-gray-500 glass rounded-2xl border border-white/10">
           <FolderKanbanIcon size={48} className="mx-auto mb-3 opacity-30" />
           <p className="text-lg mb-1">{data.projects.length === 0 ? 'No projects yet' : 'No projects match your filters'}</p>
-          {data.projects.length === 0 && (
+          {data.projects.length === 0 && isOwner && (
             <Button onClick={() => setShowModal(true)} variant="secondary" className="mt-4">Create your first project</Button>
           )}
         </div>
@@ -97,7 +101,7 @@ export default function Projects() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((p, i) => (
             <motion.div key={p.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-              <ProjectCard project={p} onDelete={() => { deleteProject(p.id); refresh() }} />
+              <ProjectCard project={p} onDelete={isOwner ? () => { deleteProject(p.id); refresh() } : undefined} />
             </motion.div>
           ))}
         </motion.div>
@@ -113,7 +117,7 @@ export default function Projects() {
               </div>
               <span className="text-xs text-gray-500 capitalize">{p.priority || 'medium'}</span>
               <span className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleDateString()}</span>
-              <button onClick={() => { deleteProject(p.id); refresh() }} className="text-xs text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-all">Delete</button>
+              {isOwner && <button onClick={() => { deleteProject(p.id); refresh() }} className="text-xs text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-all">Delete</button>}
             </motion.div>
           ))}
         </div>

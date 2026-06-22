@@ -1,5 +1,18 @@
 const STORAGE_KEY = 'project_hub_data'
 
+let _isAuthenticated = false
+
+export function setAuthState(auth) {
+  _isAuthenticated = auth
+}
+
+function requireAuth() {
+  if (!_isAuthenticated) {
+    return false
+  }
+  return true
+}
+
 const defaultData = {
   projects: [],
   logEntries: [],
@@ -84,6 +97,7 @@ export function getProject(id) {
 }
 
 export function addProject(project) {
+  if (!requireAuth()) return null
   const data = loadData()
   const newProject = {
     id: generateId(),
@@ -100,6 +114,7 @@ export function addProject(project) {
 }
 
 export function updateProject(id, updates) {
+  if (!requireAuth()) return null
   const data = loadData()
   const idx = data.projects.findIndex(p => p.id === id)
   if (idx !== -1) {
@@ -111,6 +126,7 @@ export function updateProject(id, updates) {
 }
 
 export function deleteProject(id) {
+  if (!requireAuth()) return
   const data = loadData()
   const project = data.projects.find(p => p.id === id)
   data.projects = data.projects.filter(p => p.id !== id)
@@ -123,6 +139,7 @@ export function deleteProject(id) {
 
 // --- Log Entries ---
 export function addLogEntry(entry) {
+  if (!requireAuth()) return null
   const data = loadData()
   const newEntry = { id: generateId(), createdAt: new Date().toISOString(), tags: [], mood: null, ...entry }
   data.logEntries.push(newEntry)
@@ -132,6 +149,7 @@ export function addLogEntry(entry) {
 }
 
 export function updateLogEntry(id, updates) {
+  if (!requireAuth()) return null
   const data = loadData()
   const idx = data.logEntries.findIndex(e => e.id === id)
   if (idx !== -1) {
@@ -143,6 +161,7 @@ export function updateLogEntry(id, updates) {
 }
 
 export function deleteLogEntry(id) {
+  if (!requireAuth()) return
   const data = loadData()
   data.logEntries = data.logEntries.filter(e => e.id !== id)
   saveData(data)
@@ -171,6 +190,7 @@ export function getTags() {
 }
 
 export function addTag(tag) {
+  if (!requireAuth()) return null
   const data = loadData()
   const newTag = { id: generateId(), name: tag.name, color: tag.color || '#6366f1' }
   data.tags.push(newTag)
@@ -179,6 +199,7 @@ export function addTag(tag) {
 }
 
 export function deleteTag(id) {
+  if (!requireAuth()) return
   const data = loadData()
   data.tags = data.tags.filter(t => t.id !== id)
   saveData(data)
@@ -186,6 +207,7 @@ export function deleteTag(id) {
 
 // --- Milestones ---
 export function addMilestone(milestone) {
+  if (!requireAuth()) return null
   const data = loadData()
   const newMilestone = { id: generateId(), createdAt: new Date().toISOString(), completed: false, ...milestone }
   data.milestones.push(newMilestone)
@@ -195,6 +217,7 @@ export function addMilestone(milestone) {
 }
 
 export function updateMilestone(id, updates) {
+  if (!requireAuth()) return null
   const data = loadData()
   const idx = data.milestones.findIndex(m => m.id === id)
   if (idx !== -1) {
@@ -206,6 +229,7 @@ export function updateMilestone(id, updates) {
 }
 
 export function deleteMilestone(id) {
+  if (!requireAuth()) return
   const data = loadData()
   data.milestones = data.milestones.filter(m => m.id !== id)
   saveData(data)
@@ -220,6 +244,7 @@ export function getMilestones(projectId) {
 
 // --- Time Tracking ---
 export function addTimeEntry(entry) {
+  if (!requireAuth()) return null
   const data = loadData()
   const newEntry = { id: generateId(), createdAt: new Date().toISOString(), ...entry }
   data.timeEntries.push(newEntry)
@@ -241,6 +266,7 @@ export function getTotalTimeForProject(projectId) {
 
 // --- Comments ---
 export function addComment(comment) {
+  if (!requireAuth()) return null
   const data = loadData()
   const newComment = { id: generateId(), createdAt: new Date().toISOString(), ...comment }
   data.comments.push(newComment)
@@ -255,6 +281,7 @@ export function getComments(targetId) {
 }
 
 export function deleteComment(id) {
+  if (!requireAuth()) return
   const data = loadData()
   data.comments = data.comments.filter(c => c.id !== id)
   saveData(data)
@@ -262,6 +289,7 @@ export function deleteComment(id) {
 
 // --- Notifications ---
 export function addNotification(message, type = 'info') {
+  if (!requireAuth()) return null
   const data = loadData()
   const notif = { id: generateId(), message, type, read: false, createdAt: new Date().toISOString() }
   data.notifications.unshift(notif)
@@ -271,18 +299,21 @@ export function addNotification(message, type = 'info') {
 }
 
 export function markNotificationRead(id) {
+  if (!requireAuth()) return
   const data = loadData()
   const notif = data.notifications.find(n => n.id === id)
   if (notif) { notif.read = true; saveData(data) }
 }
 
 export function markAllNotificationsRead() {
+  if (!requireAuth()) return
   const data = loadData()
   data.notifications.forEach(n => n.read = true)
   saveData(data)
 }
 
 export function clearNotifications() {
+  if (!requireAuth()) return
   const data = loadData()
   data.notifications = []
   saveData(data)
@@ -290,6 +321,7 @@ export function clearNotifications() {
 
 // --- Export/Import ---
 export function exportData() {
+  if (!requireAuth()) return
   const data = loadData()
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -300,6 +332,7 @@ export function exportData() {
 }
 
 export function importData(jsonStr) {
+  if (!requireAuth()) return false
   try {
     const data = JSON.parse(jsonStr)
     if (data.projects && data.logEntries) {

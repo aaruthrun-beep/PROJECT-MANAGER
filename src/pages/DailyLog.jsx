@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, Plus, Search, Sparkles, TrendingUp, Zap, Pin, PenLine } from 'lucide-react'
 import { loadData, addLogEntry, updateLogEntry, deleteLogEntry } from '../data/store'
+import { useAuth } from '../context/AuthContext'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
 import Modal from '../ui/Modal'
@@ -21,6 +22,7 @@ const moods = [
 const emptyForm = { title: '', content: '', date: new Date().toISOString().split('T')[0], projectId: '', mood: null, tags: [], pinned: false }
 
 export default function DailyLog() {
+  const { isOwner } = useAuth()
   const [data, setData] = useState({ projects: [], logEntries: [] })
   const [search, setSearch] = useState('')
   const [filterProject, setFilterProject] = useState('all')
@@ -170,20 +172,21 @@ export default function DailyLog() {
           </h2>
           <p className="text-gray-400 text-sm mt-1">{data.logEntries.length} total entries</p>
         </div>
-        <Button onClick={openCreate} icon={Plus} size="lg">New Entry</Button>
+        {isOwner && <Button onClick={openCreate} icon={Plus} size="lg">New Entry</Button>}
       </div>
 
-      {/* Quick Mood Log */}
-      <div className="flex items-center gap-2 mb-5 overflow-x-auto scrollbar-hide -mx-2 sm:mx-0 px-2 sm:px-0">
-        <span className="text-xs text-gray-500 shrink-0 font-medium">Quick log:</span>
-        {moods.map(m => (
-          <button key={m.value} onClick={() => quickLog(m.value)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all shrink-0 text-gray-300 active:scale-95">
-            <span>{m.emoji}</span>
-            <span>{m.label}</span>
-          </button>
-        ))}
-      </div>
+      {isOwner && (
+        <div className="flex items-center gap-2 mb-5 overflow-x-auto scrollbar-hide -mx-2 sm:mx-0 px-2 sm:px-0">
+          <span className="text-xs text-gray-500 shrink-0 font-medium">Quick log:</span>
+          {moods.map(m => (
+            <button key={m.value} onClick={() => quickLog(m.value)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all shrink-0 text-gray-300 active:scale-95">
+              <span>{m.emoji}</span>
+              <span>{m.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Mini Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-5">
@@ -241,7 +244,7 @@ export default function DailyLog() {
           <div className="space-y-3">
             {todayEntries.map((e, i) => (
               <motion.div key={e.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-                <LogEntryCard entry={e} onDelete={(id) => { deleteLogEntry(id); refresh() }} onView={setViewEntry} onEdit={openEdit} onPin={togglePin} />
+                <LogEntryCard entry={e} onDelete={isOwner ? (id) => { deleteLogEntry(id); refresh() } : undefined} onView={setViewEntry} onEdit={isOwner ? openEdit : undefined} onPin={isOwner ? togglePin : undefined} />
               </motion.div>
             ))}
           </div>
@@ -261,7 +264,7 @@ export default function DailyLog() {
           </div>
           <div className="space-y-3">
             {entries.map(e => (
-              <LogEntryCard key={e.id} entry={e} onDelete={(id) => { deleteLogEntry(id); refresh() }} onView={setViewEntry} onEdit={openEdit} onPin={togglePin} />
+              <LogEntryCard key={e.id} entry={e} onDelete={isOwner ? (id) => { deleteLogEntry(id); refresh() } : undefined} onView={setViewEntry} onEdit={isOwner ? openEdit : undefined} onPin={isOwner ? togglePin : undefined} />
             ))}
           </div>
         </div>
@@ -275,7 +278,7 @@ export default function DailyLog() {
           </div>
           <p className="text-gray-400 text-lg mb-1">No entries found</p>
           <p className="text-gray-600 text-sm mb-5">{search ? 'Try a different search term' : 'Start logging your daily work'}</p>
-          <Button variant="secondary" onClick={openCreate} icon={Plus}>Create your first entry</Button>
+          {isOwner && <Button variant="secondary" onClick={openCreate} icon={Plus}>Create your first entry</Button>}
         </motion.div>
       )}
 

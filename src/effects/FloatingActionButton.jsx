@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, FolderKanban, CalendarPlus, X, Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const actions = [
   { icon: FolderKanban, label: 'New Project', path: '/projects?new=true', color: 'bg-indigo-500' },
@@ -11,6 +12,9 @@ const actions = [
 export default function FloatingActionButton() {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
+  const { isOwner } = useAuth()
+
+  if (!isOwner) return null
 
   return (
     <div className="fixed bottom-5 right-5 z-40 md:bottom-6 md:right-6">

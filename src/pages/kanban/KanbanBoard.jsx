@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, MoreHorizontal } from 'lucide-react'
 import { loadData, updateProject } from '../../data/store'
+import { useAuth } from '../../context/AuthContext'
 import Card from '../../ui/Card'
 import Badge from '../../ui/Badge'
 import { useNavigate } from 'react-router-dom'
@@ -14,6 +15,7 @@ const columns = [
 ]
 
 export default function KanbanBoard() {
+  const { isOwner } = useAuth()
   const [data, setData] = useState({ projects: [] })
   const [dragging, setDragging] = useState(null)
   const navigate = useNavigate()
@@ -49,8 +51,8 @@ export default function KanbanBoard() {
           const projects = getProjectsForColumn(col.id)
           return (
             <div key={col.id}
-              onDragOver={e => e.preventDefault()}
-              onDrop={e => handleDrop(e, col.id)}
+              onDragOver={isOwner ? e => e.preventDefault() : undefined}
+              onDrop={isOwner ? e => handleDrop(e, col.id) : undefined}
               className={`glass rounded-2xl border border-white/10 border-t-2 ${col.color} p-4`}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-white">{col.title}</h3>
@@ -64,7 +66,7 @@ export default function KanbanBoard() {
                 )}
                 {projects.map((p, i) => (
                   <motion.div key={p.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-                    draggable onDragStart={e => handleDragStart(e, p)}
+                    {...(isOwner ? { draggable: true, onDragStart: e => handleDragStart(e, p) } : {})}
                     onClick={() => navigate(`/projects/${p.id}`)}
                     className={`glass rounded-xl p-4 cursor-grab active:cursor-grabbing hover:border-indigo-500/30 transition-all ${dragging === p.id ? 'opacity-50 scale-95' : ''}`}>
                     <div className="flex items-start justify-between mb-2">
