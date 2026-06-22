@@ -158,7 +158,8 @@ export async function uploadImageToRepo(file) {
   }
 
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${filepath}`
-  console.log('[ImageUpload] uploading to', url, 'token prefix', token.slice(0, 6))
+  console.log('[ImageUpload] owner=%s repo=%s path=%s branch=%s token_prefix=%s',
+    owner, repo, safePath, branch, token.slice(0, 6))
 
   let res
   try {
