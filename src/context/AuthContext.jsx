@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { setAuthState } from '../data/store'
 
 const AUTH_KEY = 'project_hub_auth'
 const DEFAULT_PASS = 'admin'
@@ -17,17 +16,12 @@ export function AuthProvider({ children }) {
         const session = JSON.parse(raw)
         if (session.expires > Date.now()) {
           setUser({ username: session.username })
-          setAuthState(true)
         } else {
           localStorage.removeItem(AUTH_KEY)
-          setAuthState(false)
         }
       } catch {
         localStorage.removeItem(AUTH_KEY)
-        setAuthState(false)
       }
-    } else {
-      setAuthState(false)
     }
     setLoading(false)
   }, [])
@@ -39,7 +33,6 @@ export function AuthProvider({ children }) {
       const session = { username: 'owner', expires: Date.now() + 7 * 24 * 60 * 60 * 1000 }
       localStorage.setItem(AUTH_KEY, JSON.stringify(session))
       setUser({ username: 'owner' })
-      setAuthState(true)
       return true
     }
     return false
@@ -48,7 +41,6 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_KEY)
     setUser(null)
-    setAuthState(false)
   }, [])
 
   const setPassword = useCallback((password) => {

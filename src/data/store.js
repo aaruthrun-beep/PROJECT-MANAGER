@@ -1,16 +1,18 @@
 const STORAGE_KEY = 'project_hub_data'
 
-let _isAuthenticated = false
-
-export function setAuthState(auth) {
-  _isAuthenticated = auth
+function isSessionValid() {
+  try {
+    const raw = localStorage.getItem('project_hub_auth')
+    if (!raw) return false
+    const session = JSON.parse(raw)
+    return session.expires > Date.now()
+  } catch {
+    return false
+  }
 }
 
 function requireAuth() {
-  if (!_isAuthenticated) {
-    return false
-  }
-  return true
+  return isSessionValid()
 }
 
 const defaultData = {
