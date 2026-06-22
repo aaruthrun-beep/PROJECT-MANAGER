@@ -34,6 +34,7 @@ export default function ProjectDetail() {
   const [showTimeModal, setShowTimeModal] = useState(false)
   const [showCommentModal, setShowCommentModal] = useState(false)
   const [showMediaViewer, setShowMediaViewer] = useState(null)
+  const [viewEntry, setViewEntry] = useState(null)
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({})
   const [logForm, setLogForm] = useState({ title: '', content: '', date: new Date().toISOString().split('T')[0], images: [], videos: [], mood: null })
@@ -198,7 +199,7 @@ export default function ProjectDetail() {
                       {isOwner && <Button variant="secondary" size="sm" onClick={() => setShowLogModal(true)}>Add first entry</Button>}
                     </Card>
                 ) : (
-                  entries.map(e => <LogEntryCard key={e.id} entry={e} onDelete={isOwner ? () => { deleteLogEntry(e.id); refresh() } : undefined} />)
+                  entries.map(e => <LogEntryCard key={e.id} entry={e} onView={setViewEntry} onDelete={isOwner ? () => { deleteLogEntry(e.id); refresh() } : undefined} />)
                 )}
               </>
             )}
@@ -321,6 +322,58 @@ export default function ProjectDetail() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" onClick={() => setShowMediaViewer(null)}>
           <img src={showMediaViewer} className="max-w-full max-h-full object-contain rounded-2xl" onClick={e => e.stopPropagation()} />
         </div>
+      )}
+
+      {viewEntry && (
+        <Modal open={!!viewEntry} onClose={() => setViewEntry(null)} title={viewEntry.title} size="xl">
+          <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
+            <Calendar size={14} />
+            {format(new Date(viewEntry.date || viewEntry.createdAt), 'MMM d, yyyy')}
+            {viewEntry.mood && (
+              <Badge color={
+                { productive: 'emerald', struggling: 'red', neutral: 'gray', breakthrough: 'purple', learning: 'sky' }[viewEntry.mood]
+              }>{viewEntry.mood}</Badge>
+            )}
+          </div>
+          {viewEntry.content ? (
+            <p className="text-gray-300 text-sm whitespace-pre-wrap mb-4">{viewEntry.content}</p>
+          ) : (
+            <p className="text-gray-500 text-sm italic mb-4">No notes</p>
+          )}
+          {viewEntry.tags?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-4 pt-4 border-t border-white/5">
+              {viewEntry.tags.map((tag, i) => (
+                <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-gray-400 border border-white/5">{tag}</span>
+              ))}
+            </div>
+          )}
+          {viewEntry.images?.length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-sm font-medium text-gray-400 mb-2">Photos ({viewEntry.images.length})</h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {viewEntry.images.map((url, i) => (
+                  <img key={i} src={url} alt="" className="w-full aspect-video object-cover rounded-xl border border-white/10 cursor-pointer" onClick={() => setShowMediaViewer(url)} />
+                ))}
+              </div>
+            </div>
+          )}
+          {viewEntry.videos?.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-400 mb-2">Videos ({viewEntry.videos.length})</h4>
+              {viewEntry.videos.map((url, i) => (
+                <div key={i} className="aspect-video rounded-xl overflow-hidden border border-white/10 mb-3">
+                  {url.includes('youtube') || url.includes('youtu.be') ? (
+                    <iframe src={`https://www.youtube.com/embed/${(url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/) || [])[1] || ''}`}
+                      className="w-full h-full" allowFullScreen />
+                  ) : <video src={url} controls className="w-full h-full" />}
+                </div>
+              ))}
+            </div>
+          )}
+          {(!viewEntry.content && !viewEntry.images?.length && !viewEntry.videos?.length) && (
+            <p className="text-gray-500 text-sm italic">Empty entry</p>
+          )}
+        </Modal>
       )}
 
       <Modal open={showLogModal} onClose={() => setShowLogModal(false)} title="New Log Entry" size="xl">

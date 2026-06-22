@@ -9,7 +9,7 @@ export default function LogEntryCard({ entry, onDelete, onView, onEdit, onPin, c
 
   const handleShare = async (e) => {
     e.stopPropagation()
-    const shareUrl = `${window.location.origin}${window.location.pathname}#log-${entry.id}`
+    const shareUrl = `${window.location.origin}/daily-log#log-${entry.id}`
     const shareData = {
       title: entry.title,
       text: entry.content ? entry.content.slice(0, 200) : 'Check out this log entry',
