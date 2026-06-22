@@ -152,24 +152,30 @@ export async function uploadImageToRepo(file) {
     branch,
   }
 
-  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filepath}`, {
-    method: 'PUT',
-    headers: {
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${filepath}`
+  console.log('[ImageUpload] uploading to', url, 'token prefix', token.slice(0, 6))
+
+  let res
+  try {
+    const headers = {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
       Accept: 'application/vnd.github.v3+json',
-    },
-    body: JSON.stringify(body),
-  })
+    }
+    res = await fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) })
+  } catch (err) {
+    console.error('[ImageUpload] fetch threw — network/CORS error:', err)
+    throw new Error(`Network error — check internet and console (F12)`)
+  }
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    console.error('[ImageUpload] GitHub API error:', res.status, err)
-    const msg = err.message || `GitHub API error: ${res.status}`
+    let errMsg
+    try { const e = await res.json(); errMsg = e.message } catch {}
+    console.error('[ImageUpload] GitHub API error:', res.status, errMsg)
     if (res.status === 403) throw new Error(`Token needs repo scope — check token permissions`)
     if (res.status === 404) throw new Error(`Repo/owner not found — check Settings`)
     if (res.status === 422) throw new Error(`Bad request — check branch and path`)
-    throw new Error(msg)
+    throw new Error(errMsg || `GitHub API error: ${res.status}`)
   }
 
   return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filepath}`
