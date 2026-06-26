@@ -76,9 +76,6 @@ export async function tryLoadFromGistParam() {
 export function saveData(data) {
   if (!requireAuth()) return
   data.settings = data.settings || {}
-  if (data.settings.passwordHash) {
-    localStorage.setItem('project_hub_pass', data.settings.passwordHash)
-  }
   data.settings.passwordHash = localStorage.getItem('project_hub_pass') || btoa('admin')
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   tryAutoSync(data)

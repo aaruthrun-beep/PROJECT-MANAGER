@@ -127,6 +127,9 @@ export default function Settings() {
     setSyncing(true)
     try {
       const data = await pullFromGist()
+      if (data.settings?.passwordHash) {
+        localStorage.setItem('project_hub_pass', data.settings.passwordHash)
+      }
       saveData(data)
       setData(data)
       toast.success('Data pulled from GitHub Gist')
