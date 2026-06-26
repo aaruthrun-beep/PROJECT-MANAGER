@@ -81,8 +81,8 @@ export default function Settings() {
     if (!passwordForm.new) { toast.error('Enter a password'); return }
     if (passwordForm.new !== passwordForm.confirm) { toast.error('Passwords do not match'); return }
     if (hasPassword()) {
-      const stored = localStorage.getItem('project_hub_pass')
-      if (stored !== btoa(passwordForm.current)) { toast.error('Current password is wrong'); return }
+      const currentHash = loadData().settings?.passwordHash
+      if (currentHash !== btoa(passwordForm.current)) { toast.error('Current password is wrong'); return }
     }
     setPassword(passwordForm.new)
     setShowPasswordForm(false)
