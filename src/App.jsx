@@ -49,11 +49,11 @@ function AppShell() {
 
   useEffect(() => {
     const gistId = new URLSearchParams(window.location.search).get('gist')
-    if (gistId && !isOwner) {
+    if (gistId) {
       setLoadingGist(true)
       tryLoadFromGistParam().finally(() => setLoadingGist(false))
     }
-  }, [isOwner])
+  }, [])
 
   const isRemote = !!getRemoteData()
 
