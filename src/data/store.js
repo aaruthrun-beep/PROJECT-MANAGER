@@ -37,9 +37,6 @@ export function loadData() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (parsed.settings?.passwordHash && !localStorage.getItem('project_hub_pass')) {
-        localStorage.setItem('project_hub_pass', parsed.settings.passwordHash)
-      }
       return { ...structuredClone(defaultData), ...parsed }
     }
   } catch {}
@@ -75,8 +72,6 @@ export async function tryLoadFromGistParam() {
 
 export function saveData(data) {
   if (!requireAuth()) return
-  data.settings = data.settings || {}
-  data.settings.passwordHash = localStorage.getItem('project_hub_pass') || btoa('admin')
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   tryAutoSync(data)
 }

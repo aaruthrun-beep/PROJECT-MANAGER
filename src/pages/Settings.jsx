@@ -85,7 +85,6 @@ export default function Settings() {
       if (stored !== btoa(passwordForm.current)) { toast.error('Current password is wrong'); return }
     }
     setPassword(passwordForm.new)
-    saveData(loadData())
     setShowPasswordForm(false)
     setPasswordForm({ current: '', new: '', confirm: '' })
     toast.success('Password saved')
@@ -127,9 +126,6 @@ export default function Settings() {
     setSyncing(true)
     try {
       const data = await pullFromGist()
-      if (data.settings?.passwordHash) {
-        localStorage.setItem('project_hub_pass', data.settings.passwordHash)
-      }
       saveData(data)
       setData(data)
       toast.success('Data pulled from GitHub Gist')

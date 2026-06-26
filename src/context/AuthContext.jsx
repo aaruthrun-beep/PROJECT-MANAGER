@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { loadData, saveData } from '../data/store'
 
 const AUTH_KEY = 'project_hub_auth'
 const DEFAULT_PASS = 'admin'
@@ -27,33 +28,15 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = useCallback((password) => {
-    const entered = btoa(password)
-    const stored = localStorage.getItem('project_hub_pass')
-    let matched
+    const data = loadData()
+    const expected = data.settings?.passwordHash || btoa(DEFAULT_PASS)
 
-    if (stored && stored === entered) {
-      matched = stored
-    } else {
-      try {
-        const raw = localStorage.getItem('project_hub_data')
-        if (raw) {
-          const data = JSON.parse(raw)
-          if (data.settings?.passwordHash === entered) {
-            matched = data.settings.passwordHash
-            localStorage.setItem('project_hub_pass', matched)
-          }
-        }
-      } catch {}
-    }
-
-    if (!matched && !stored && btoa(DEFAULT_PASS) === entered) {
-      matched = entered
-      localStorage.setItem('project_hub_pass', matched)
-    }
-
-    if (matched) {
+    if (expected === btoa(password)) {
       const session = { username: 'owner', expires: Date.now() + 7 * 24 * 60 * 60 * 1000 }
       localStorage.setItem(AUTH_KEY, JSON.stringify(session))
+      data.settings = data.settings || {}
+      data.settings.passwordHash = expected
+      saveData(data)
       setUser({ username: 'owner' })
       return true
     }
@@ -66,11 +49,15 @@ export function AuthProvider({ children }) {
   }, [])
 
   const setPassword = useCallback((password) => {
-    localStorage.setItem('project_hub_pass', btoa(password))
+    const data = loadData()
+    data.settings = data.settings || {}
+    data.settings.passwordHash = btoa(password)
+    saveData(data)
   }, [])
 
   const hasPassword = useCallback(() => {
-    return !!localStorage.getItem('project_hub_pass')
+    const data = loadData()
+    return !!(data.settings?.passwordHash)
   }, [])
 
   const isOwner = !!user

@@ -12,7 +12,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const { login, hasPassword } = useAuth()
   const navigate = useNavigate()
-  const noPassConfigured = !hasPassword() && !loadData().settings?.passwordHash
+  const noPassConfigured = !hasPassword()
 
   const handleSubmit = (e) => {
     e.preventDefault()
