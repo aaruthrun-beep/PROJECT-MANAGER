@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { loadData, saveData } from '../data/store'
+import { loadData } from '../data/store'
 
 const AUTH_KEY = 'project_hub_auth'
+const DATA_KEY = 'project_hub_data'
 const DEFAULT_PASS = 'admin'
 
 const AuthContext = createContext(null)
@@ -34,9 +35,6 @@ export function AuthProvider({ children }) {
     if (expected === btoa(password)) {
       const session = { username: 'owner', expires: Date.now() + 7 * 24 * 60 * 60 * 1000 }
       localStorage.setItem(AUTH_KEY, JSON.stringify(session))
-      data.settings = data.settings || {}
-      data.settings.passwordHash = expected
-      saveData(data)
       setUser({ username: 'owner' })
       return true
     }
@@ -52,7 +50,7 @@ export function AuthProvider({ children }) {
     const data = loadData()
     data.settings = data.settings || {}
     data.settings.passwordHash = btoa(password)
-    saveData(data)
+    localStorage.setItem(DATA_KEY, JSON.stringify(data))
   }, [])
 
   const hasPassword = useCallback(() => {
