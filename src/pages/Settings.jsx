@@ -85,6 +85,7 @@ export default function Settings() {
       if (stored !== btoa(passwordForm.current)) { toast.error('Current password is wrong'); return }
     }
     setPassword(passwordForm.new)
+    saveData(loadData())
     setShowPasswordForm(false)
     setPasswordForm({ current: '', new: '', confirm: '' })
     toast.success('Password saved')
