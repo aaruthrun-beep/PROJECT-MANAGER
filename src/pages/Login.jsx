@@ -3,14 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Lock, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { loadData } from '../data/store'
 import Button from '../ui/Button'
 
 export default function Login() {
   const [password, setPassword] = useState('')
   const [show, setShow] = useState(false)
   const [error, setError] = useState('')
-  const { login } = useAuth()
+  const { login, hasPassword } = useAuth()
   const navigate = useNavigate()
+  const noPassConfigured = !hasPassword() && !loadData().settings?.passwordHash
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -51,9 +53,11 @@ export default function Login() {
           <Button type="submit" className="w-full">Unlock</Button>
         </form>
 
-        <p className="text-center text-xs text-gray-600 mt-6">
-          Default password: <span className="text-gray-400 font-mono">admin</span> — change it in Settings
-        </p>
+        {noPassConfigured && (
+          <p className="text-center text-xs text-gray-600 mt-6">
+            Default password: <span className="text-gray-400 font-mono">admin</span> — change it in Settings
+          </p>
+        )}
       </motion.div>
     </div>
   )
