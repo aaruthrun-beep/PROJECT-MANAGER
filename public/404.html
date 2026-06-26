@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ProjectHub</title>
+  <script>
+    var p = window.location.pathname
+    var s = window.location.search
+    var h = window.location.hash
+    var i = p.indexOf('/', 1)
+    var base = i > 0 ? p.substring(0, i + 1) : '/'
+    var route = i > 0 ? p.substring(i) : p
+    sessionStorage.setItem('spa_redirect', route + s + h)
+    window.location.replace(base)
+  </script>
+</head>
+<body></body>
+</html>

@@ -31,6 +31,16 @@ function AppShell() {
   const { isOwner } = useAuth()
 
   useEffect(() => {
+    const savedPath = sessionStorage.getItem('spa_redirect')
+    if (savedPath) {
+      sessionStorage.removeItem('spa_redirect')
+      if (window.location.pathname + window.location.search + window.location.hash !== savedPath) {
+        navigate(savedPath, { replace: true })
+      }
+    }
+  }, [navigate])
+
+  useEffect(() => {
     const hash = window.location.hash
     if (hash.startsWith('#log-')) {
       navigate('/daily-log', { replace: true })
