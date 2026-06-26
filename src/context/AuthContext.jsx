@@ -28,26 +28,28 @@ export function AuthProvider({ children }) {
 
   const login = useCallback((password) => {
     const stored = localStorage.getItem('project_hub_pass')
-    const expected = stored || btoa(DEFAULT_PASS)
+
+    let expected
+    if (stored) {
+      expected = stored
+    } else {
+      try {
+        const raw = localStorage.getItem('project_hub_data')
+        if (raw) {
+          const data = JSON.parse(raw)
+          expected = data.settings?.passwordHash
+        }
+      } catch {}
+      expected = expected || btoa(DEFAULT_PASS)
+    }
+
     if (expected === btoa(password)) {
+      if (!stored) localStorage.setItem('project_hub_pass', expected)
       const session = { username: 'owner', expires: Date.now() + 7 * 24 * 60 * 60 * 1000 }
       localStorage.setItem(AUTH_KEY, JSON.stringify(session))
       setUser({ username: 'owner' })
       return true
     }
-    try {
-      const raw = localStorage.getItem('project_hub_data')
-      if (raw) {
-        const data = JSON.parse(raw)
-        if (data.settings?.passwordHash && data.settings.passwordHash === btoa(password)) {
-          localStorage.setItem('project_hub_pass', data.settings.passwordHash)
-          const session = { username: 'owner', expires: Date.now() + 7 * 24 * 60 * 60 * 1000 }
-          localStorage.setItem(AUTH_KEY, JSON.stringify(session))
-          setUser({ username: 'owner' })
-          return true
-        }
-      }
-    } catch {}
     return false
   }, [])
 
