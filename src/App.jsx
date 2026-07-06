@@ -51,7 +51,7 @@ function AppShell() {
       }
     }
 
-    if (gistId && !isOwner) {
+    if (gistId) {
       setLoadingGist(true)
       tryLoadFromGistParam().finally(() => {
         setLoadingGist(false)
@@ -60,9 +60,10 @@ function AppShell() {
     } else {
       handleHash()
     }
-  }, [isOwner, navigate])
+  }, [navigate])
 
   const isRemote = !!getRemoteData()
+  const isGistView = !!new URLSearchParams(window.location.search).get('gist')
 
   return (
     <div className="flex min-h-screen relative">
@@ -75,10 +76,10 @@ function AppShell() {
             Loading shared data...
           </div>
         )}
-        {!isOwner && !loadingGist && (
+        {isRemote && !loadingGist && (
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-1.5 text-center text-xs text-amber-400 flex items-center justify-center gap-1.5">
-            {isRemote ? <Cloud size={12} /> : <Eye size={12} />}
-            {isRemote ? 'Viewing shared data via Gist' : 'Viewer mode'}
+            <Cloud size={12} />
+            Viewing shared data via Gist
           </div>
         )}
         <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
