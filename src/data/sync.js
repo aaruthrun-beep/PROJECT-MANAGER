@@ -16,8 +16,21 @@ export function getSyncConfig() {
   return getGistConfig()
 }
 
-export function saveSyncConfig({ token, gistId }) {
+export function saveSyncConfig({ token, gistId, user }) {
   saveGistConfig({ token, gistId })
+  if (user && gistId) {
+    user.update({ publicMetadata: { ...user.publicMetadata, gistId } }).catch(() => {})
+  }
+}
+
+export async function restoreGistIdFromClerk(user) {
+  const gistId = user?.publicMetadata?.gistId
+  if (gistId) {
+    const existing = getGistConfig()
+    saveGistConfig({ ...existing, gistId })
+    return gistId
+  }
+  return null
 }
 
 export function isSyncConfigured() {
@@ -26,11 +39,11 @@ export function isSyncConfigured() {
 }
 
 export async function pullFromGist() {
-  const { token, gistId } = getGistConfig()
-  if (!token || !gistId) throw new Error('Sync not configured')
+  const { gistId } = getGistConfig()
+  if (!gistId) throw new Error('Sync not configured - no Gist ID')
 
   const res = await fetch(`${GIST_API}/${gistId}`, {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' },
+    headers: { Accept: 'application/vnd.github.v3+json' },
   })
 
   if (!res.ok) {

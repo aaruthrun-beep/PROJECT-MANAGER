@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { tryLoadFromGistParam, getRemoteData, saveData, loadData } from './data/store'
-import { isSyncConfigured, pullFromGist } from './data/sync'
+import { isSyncConfigured, pullFromGist, restoreGistIdFromClerk } from './data/sync'
 import Sidebar from './components/Sidebar'
 import GlobalSearch from './components/GlobalSearch'
 import NotificationBell from './components/NotificationBell'
@@ -30,7 +30,7 @@ function AppShell() {
   const [loadingGist, setLoadingGist] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const { isOwner } = useAuth()
+  const { isOwner, user } = useAuth()
 
   useEffect(() => {
     const savedPath = sessionStorage.getItem('spa_redirect')
@@ -66,6 +66,7 @@ function AppShell() {
 
   useEffect(() => {
     if (!isOwner) return
+    restoreGistIdFromClerk(user)
     const data = loadData()
     const hasData = data.projects?.length > 0 || data.logEntries?.length > 0
     if (!hasData && isSyncConfigured()) {
@@ -75,7 +76,7 @@ function AppShell() {
         toast.success('Data synced from Gist')
       }).catch(() => {}).finally(() => setLoadingGist(false))
     }
-  }, [isOwner])
+  }, [isOwner, user])
 
   const isRemote = !!getRemoteData()
   const isGistView = !!new URLSearchParams(window.location.search).get('gist')

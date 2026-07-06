@@ -74,7 +74,7 @@ export default function Settings() {
   }
 
   const handleSyncSave = () => {
-    saveSyncConfig(syncConfig)
+    saveSyncConfig({ ...syncConfig, user: clerkUser.user })
     if (syncConfig.token && syncConfig.gistId) {
       syncStatus().then(setSyncInfo)
     }
@@ -115,7 +115,7 @@ export default function Settings() {
       const data = loadData()
       const { gistId, gistUrl } = await createGist(syncConfig.token, data)
       setSyncConfig(prev => ({ ...prev, gistId }))
-      saveSyncConfig({ token: syncConfig.token, gistId })
+      saveSyncConfig({ token: syncConfig.token, gistId, user: clerkUser.user })
       toast.success(`Gist created! ID: ${gistId}`)
       syncStatus().then(setSyncInfo)
     } catch (e) {
