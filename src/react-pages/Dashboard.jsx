@@ -1,20 +1,24 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FolderKanban, CalendarPlus, TrendingUp, Activity, Clock, Target, Sparkles, Zap, RefreshCw } from 'lucide-react'
-import { loadData, getStats } from '../data/store'
+import { FolderKanban, CalendarPlus, TrendingUp, Activity, Clock, Target, Sparkles, Zap, RefreshCw, Cloud, Download } from 'lucide-react'
+import { loadData, getStats, saveData } from '../data/store'
+import { isSyncConfigured, pullFromGist } from '../data/sync'
 import Card from '../ui/Card'
+import Button from '../ui/Button'
 import ProjectCard from '../components/ProjectCard'
 import { ScrollReveal, AnimatedCounter, SkeletonPage, ConfettiEffect } from '../effects'
 import ActivityChart from '../components/charts/ActivityChart'
 import ProjectPieChart from '../components/charts/ProjectPieChart'
 import HeatmapChart from '../components/charts/HeatmapChart'
+import toast from 'react-hot-toast'
 
 export default function Dashboard() {
   const [data, setData] = useState(null)
   const [stats, setStats] = useState({})
   const [loading, setLoading] = useState(true)
   const [confetti, setConfetti] = useState(false)
+  const [restoring, setRestoring] = useState(false)
 
   const refresh = useCallback(() => {
     setLoading(true)
