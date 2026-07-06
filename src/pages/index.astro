@@ -1,0 +1,8 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SPARoot from '../components/SPARoot.jsx';
+---
+
+<Layout>
+  <SPARoot client:only="react" />
+</Layout>

@@ -1,0 +1,113 @@
+﻿import { Calendar, Image, Video, Share2, Pin, PenLine } from 'lucide-react'
+import toast from 'react-hot-toast'
+
+const moodEmojis = { productive: 'ðŸš€', struggling: 'ðŸ˜¤', neutral: 'ðŸ˜', breakthrough: 'ðŸ’¡', learning: 'ðŸ“š' }
+const moodColors = { productive: 'text-emerald-400', struggling: 'text-red-400', neutral: 'text-zinc-400', breakthrough: 'text-amber-500', learning: 'text-sky-400' }
+
+export default function LogEntryCard({ entry, onDelete, onView, onEdit, onPin, compact }) {
+  const hasMedia = (entry.images && entry.images.length > 0) || (entry.videos && entry.videos.length > 0)
+
+  const handleShare = async (e) => {
+    e.stopPropagation()
+    const base = window.location.pathname.match(/^\/[^/]+\//)?.[0] || '/'
+    const shareUrl = `${window.location.origin}${base}#log-${entry.id}`
+    const shareData = {
+      title: entry.title,
+      text: entry.content ? entry.content.slice(0, 200) : 'Check out this log entry',
+      url: shareUrl,
+    }
+    if (navigator.share) {
+      try { await navigator.share(shareData); return } catch {}
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      toast.success('Link copied to clipboard!')
+    } catch {
+      toast.success('Share URL: ' + shareUrl)
+    }
+  }
+
+  return (
+    <div className={`bg-zinc-800/80 border rounded-xl sm:rounded-2xl p-4 sm:p-5 transition-all ${entry.pinned ? 'border-amber-500/30 hover:border-amber-500/40' : 'border-zinc-700/60 hover:border-amber-600/30'}`}>
+      {entry.pinned && (
+        <div className="flex items-center gap-1 text-[10px] text-amber-400 mb-2">
+          <Pin size={10} /> Pinned
+        </div>
+      )}
+      {!compact && (
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-zinc-400 flex-wrap">
+            <Calendar size={14} className="shrink-0" />
+            {new Date(entry.date || entry.createdAt).toLocaleDateString('en-US', {
+              month: 'short', day: 'numeric', year: 'numeric'
+            })}
+            {entry.mood && <span className={moodColors[entry.mood]}>{moodEmojis[entry.mood]}</span>}
+          </div>
+          <div className="flex gap-1 sm:gap-2 shrink-0">
+            {hasMedia && (
+              <span className="flex items-center gap-1 text-[10px] sm:text-xs text-amber-500">
+                {entry.images?.length > 0 && <Image size={13} />}
+                {entry.videos?.length > 0 && <Video size={13} />}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <h4 className="text-white font-medium text-sm sm:text-base mb-1.5">{entry.title}</h4>
+      {entry.content && (
+        <p className="text-xs sm:text-sm text-zinc-400 mb-3 line-clamp-3 whitespace-pre-wrap">{entry.content}</p>
+      )}
+
+      {entry.tags?.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-3">
+          {entry.tags.map((tag, i) => (
+            <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-800/80 text-zinc-500 border border-white/5">{tag}</span>
+          ))}
+        </div>
+      )}
+
+      {hasMedia && !compact && (
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
+          {entry.images?.slice(0, 3).map((img, i) => (
+            <img key={i} src={img} alt="" className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-lg border border-zinc-700/60" />
+          ))}
+          {entry.videos?.slice(0, 2).map((vid, i) => (
+            <div key={i} className="w-12 h-12 sm:w-14 sm:h-14 bg-zinc-800 rounded-lg flex items-center justify-center border border-zinc-700/60">
+              <Video size={18} className="text-amber-500" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center gap-1 sm:gap-2 pt-2.5 border-t border-white/5 mt-2">
+        <button onClick={() => onView?.(entry)}
+          className="text-xs text-amber-500 hover:text-amber-400 transition-colors px-2 py-1 rounded-lg hover:bg-amber-600/10 active:scale-95">
+          View
+        </button>
+        {onEdit && (
+          <button onClick={() => onEdit(entry)}
+            className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-zinc-800/80 active:scale-95">
+            <PenLine size={12} /> Edit
+          </button>
+        )}
+        <button onClick={handleShare}
+          className="flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300 transition-colors px-2 py-1 rounded-lg hover:bg-sky-500/10 active:scale-95">
+          <Share2 size={12} /> Share
+        </button>
+        {onPin && (
+          <button onClick={() => onPin(entry)}
+            className={`text-xs transition-colors px-2 py-1 rounded-lg active:scale-95 ${entry.pinned ? 'text-amber-400 hover:text-amber-300 bg-amber-500/10' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/80'}`}>
+            <Pin size={12} />
+          </button>
+        )}
+        {onDelete && (
+          <button onClick={() => onDelete(entry.id)}
+            className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-1 rounded-lg hover:bg-red-500/10 active:scale-95 ml-auto">
+            Delete
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
