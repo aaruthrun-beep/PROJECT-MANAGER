@@ -3,9 +3,11 @@ import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
 import { Menu, Eye, Cloud } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { tryLoadFromGistParam, getRemoteData } from './data/store'
+import { tryLoadFromGistParam, getRemoteData, saveData, loadData } from './data/store'
+import { isSyncConfigured, pullFromGist } from './data/sync'
 import Sidebar from './components/Sidebar'
 import GlobalSearch from './components/GlobalSearch'
 import NotificationBell from './components/NotificationBell'
@@ -61,6 +63,19 @@ function AppShell() {
       handleHash()
     }
   }, [navigate])
+
+  useEffect(() => {
+    if (!isOwner) return
+    const data = loadData()
+    const hasData = data.projects?.length > 0 || data.logEntries?.length > 0
+    if (!hasData && isSyncConfigured()) {
+      setLoadingGist(true)
+      pullFromGist().then(gistData => {
+        saveData(gistData)
+        toast.success('Data synced from Gist')
+      }).catch(() => {}).finally(() => setLoadingGist(false))
+    }
+  }, [isOwner])
 
   const isRemote = !!getRemoteData()
   const isGistView = !!new URLSearchParams(window.location.search).get('gist')
