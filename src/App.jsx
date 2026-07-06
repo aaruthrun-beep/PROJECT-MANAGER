@@ -42,20 +42,25 @@ function AppShell() {
 
   useEffect(() => {
     const hash = window.location.hash
-    if (hash.startsWith('#log-')) {
-      const id = hash.replace('#log-', '')
-      sessionStorage.setItem('focus_entry', id)
-      navigate('/daily-log', { replace: true })
-    }
-  }, [navigate])
-
-  useEffect(() => {
     const gistId = new URLSearchParams(window.location.search).get('gist')
+
+    const handleHash = () => {
+      if (hash.startsWith('#log-')) {
+        sessionStorage.setItem('focus_entry', hash.replace('#log-', ''))
+        navigate('/daily-log', { replace: true })
+      }
+    }
+
     if (gistId && !isOwner) {
       setLoadingGist(true)
-      tryLoadFromGistParam().finally(() => setLoadingGist(false))
+      tryLoadFromGistParam().finally(() => {
+        setLoadingGist(false)
+        handleHash()
+      })
+    } else {
+      handleHash()
     }
-  }, [isOwner])
+  }, [isOwner, navigate])
 
   const isRemote = !!getRemoteData()
 

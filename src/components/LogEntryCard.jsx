@@ -1,5 +1,6 @@
 ﻿import { Calendar, Image, Video, Share2, Pin, PenLine } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { getSyncConfig } from '../data/sync'
 
 const moodEmojis = { productive: '\u{1F680}', struggling: '\u{1F624}', neutral: '\u{1F610}', breakthrough: '\u{1F4A1}', learning: '\u{1F4DA}' }
 const moodColors = { productive: 'text-emerald-400', struggling: 'text-red-400', neutral: 'text-zinc-400', breakthrough: 'text-amber-500', learning: 'text-sky-400' }
@@ -10,7 +11,9 @@ export default function LogEntryCard({ entry, onDelete, onView, onEdit, onPin, c
   const handleShare = async (e) => {
     e.stopPropagation()
     const base = window.location.pathname.match(/^\/[^/]+\//)?.[0] || '/'
-    const shareUrl = `${window.location.origin}${base}#log-${entry.id}`
+    const sync = getSyncConfig()
+    const gistParam = sync.gistId ? `?gist=${sync.gistId}` : ''
+    const shareUrl = `${window.location.origin}${base}${gistParam}#log-${entry.id}`
     const shareData = {
       title: entry.title,
       text: entry.content ? entry.content.slice(0, 200) : 'Check out this log entry',
