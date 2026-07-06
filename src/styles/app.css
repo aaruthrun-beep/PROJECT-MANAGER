@@ -133,3 +133,14 @@ html { scroll-behavior: smooth; }
 :root:not(.dark) .bg-black\/60 { background: rgba(0, 0, 0, 0.12); }
 :root:not(.dark) .border-white\/5 { border-color: rgba(0, 0, 0, 0.1); }
 :root:not(.dark) header .bg-black\/30 { background: rgba(232, 224, 216, 0.95); }
+:root:not(.dark) .text-white { color: #1c1917; }
+:root:not(.dark) .text-zinc-300 { color: #44403c; }
+:root:not(.dark) .text-zinc-400 { color: #6b6560; }
+:root:not(.dark) .text-zinc-500 { color: #8a8480; }
+:root:not(.dark) .text-zinc-600 { color: #a8a29e; }
+:root:not(.dark) .bg-zinc-800 { background: rgba(255, 255, 255, 0.85); }
+:root:not(.dark) .bg-zinc-800\/80 { background: rgba(255, 255, 255, 0.8); }
+:root:not(.dark) .bg-zinc-900 { background: rgba(245, 245, 245, 0.9); }
+:root:not(.dark) .bg-zinc-700\/60 { background: rgba(0, 0, 0, 0.06); }
+:root:not(.dark) .bg-white\/5 { background: rgba(0, 0, 0, 0.04); }
+:root:not(.dark) .hover\:bg-zinc-800\/80:hover { background: rgba(255, 255, 255, 0.9); }
