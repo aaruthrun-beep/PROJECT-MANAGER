@@ -19,7 +19,11 @@ export function getSyncConfig() {
 export function saveSyncConfig({ token, gistId, user }) {
   saveGistConfig({ token, gistId })
   if (user && gistId) {
-    user.update({ publicMetadata: { ...user.publicMetadata, gistId } }).catch(() => {})
+    user.update({ publicMetadata: { ...user.publicMetadata, gistId } }).then(() => {
+      console.log('Gist ID saved to Clerk profile')
+    }).catch(e => {
+      console.warn('Failed to save Gist ID to Clerk:', e)
+    })
   }
 }
 
@@ -34,6 +38,11 @@ export async function restoreGistIdFromClerk(user) {
 }
 
 export function isSyncConfigured() {
+  const c = getGistConfig()
+  return !!c.gistId
+}
+
+export function isGistWriteable() {
   const c = getGistConfig()
   return !!(c.token && c.gistId)
 }

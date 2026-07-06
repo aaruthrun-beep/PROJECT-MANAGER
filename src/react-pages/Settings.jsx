@@ -5,7 +5,7 @@ import { useUser } from '@clerk/clerk-react'
 import { loadData, saveData, exportData, importData, generateId } from '../data/store'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
-import { getSyncConfig, saveSyncConfig, isSyncConfigured, pushToGist, pullFromGist, createGist, syncStatus } from '../data/sync'
+import { getSyncConfig, saveSyncConfig, isSyncConfigured, isGistWriteable, pushToGist, pullFromGist, createGist, syncStatus } from '../data/sync'
 import Card from '../ui/Card'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
@@ -258,7 +258,7 @@ export default function Settings() {
             </div>
             <div className="flex gap-2">
               <Button size="sm" onClick={handleSyncSave} variant="glass" className="flex-1 justify-center">Save Config</Button>
-              <Button size="sm" onClick={handlePush} disabled={syncing || !isSyncConfigured()} variant="glass" className="flex-1 justify-center">
+              <Button size="sm" onClick={handlePush} disabled={syncing || !isGistWriteable()} variant="glass" className="flex-1 justify-center">
                 <Upload size={13} /> {syncing ? 'Pushing...' : 'Push'}
               </Button>
               <Button size="sm" onClick={handlePull} disabled={syncing || !isSyncConfigured()} variant="glass" className="flex-1 justify-center">
