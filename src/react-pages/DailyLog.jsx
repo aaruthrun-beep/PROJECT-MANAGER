@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, Plus, Search, Sparkles, TrendingUp, Zap, Pin, PenLine } from 'lucide-react'
-import { loadData, addLogEntry, updateLogEntry, deleteLogEntry } from '../data/store'
+import { loadData, addLogEntry, updateLogEntry, deleteLogEntry, getRemoteData } from '../data/store'
 import { useAuth } from '../context/AuthContext'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
@@ -24,6 +24,7 @@ const emptyForm = { title: '', content: '', date: new Date().toISOString().split
 
 export default function DailyLog() {
   const { isOwner } = useAuth()
+  const isSharedView = !!getRemoteData()
   const [data, setData] = useState({ projects: [], logEntries: [] })
   const [search, setSearch] = useState('')
   const [filterProject, setFilterProject] = useState('all')
@@ -181,10 +182,10 @@ export default function DailyLog() {
           </h2>
           <p className="text-zinc-400 text-sm mt-1">{data.logEntries.length} total entries</p>
         </div>
-        {isOwner && <Button onClick={openCreate} icon={Plus} size="lg">New Entry</Button>}
+        {isOwner && !isSharedView && <Button onClick={openCreate} icon={Plus} size="lg">New Entry</Button>}
       </div>
 
-      {isOwner && (
+      {isOwner && !isSharedView && (
         <div className="flex items-center gap-2 mb-5 overflow-x-auto scrollbar-hide -mx-2 sm:mx-0 px-2 sm:px-0">
           <span className="text-xs text-zinc-500 shrink-0 font-medium">Quick log:</span>
           {moods.map(m => (
@@ -254,7 +255,7 @@ export default function DailyLog() {
             {todayEntries.map((e, i) => (
               <motion.div key={e.id} id={`log-${e.id}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
                 className={highlightId === e.id ? 'ring-2 ring-amber-500 rounded-xl transition-all duration-700' : ''}>
-                <LogEntryCard entry={e} onDelete={isOwner ? (id) => { deleteLogEntry(id); refresh() } : undefined} onView={setViewEntry} onEdit={isOwner ? openEdit : undefined} onPin={isOwner ? togglePin : undefined} />
+                <LogEntryCard entry={e} onDelete={isOwner && !isSharedView ? (id) => { deleteLogEntry(id); refresh() } : undefined} onView={setViewEntry} onEdit={isOwner && !isSharedView ? openEdit : undefined} onPin={isOwner && !isSharedView ? togglePin : undefined} />
               </motion.div>
             ))}
           </div>
@@ -276,7 +277,7 @@ export default function DailyLog() {
             {entries.map(e => (
               <div key={e.id} id={`log-${e.id}`}
                 className={highlightId === e.id ? 'ring-2 ring-amber-500 rounded-xl transition-all duration-700' : ''}>
-                <LogEntryCard entry={e} onDelete={isOwner ? (id) => { deleteLogEntry(id); refresh() } : undefined} onView={setViewEntry} onEdit={isOwner ? openEdit : undefined} onPin={isOwner ? togglePin : undefined} />
+                <LogEntryCard entry={e} onDelete={isOwner && !isSharedView ? (id) => { deleteLogEntry(id); refresh() } : undefined} onView={setViewEntry} onEdit={isOwner && !isSharedView ? openEdit : undefined} onPin={isOwner && !isSharedView ? togglePin : undefined} />
               </div>
             ))}
           </div>
@@ -365,14 +366,16 @@ export default function DailyLog() {
                 </Badge>
               )}
             </div>
-            <div className="flex gap-1">
-              <button onClick={() => togglePin(viewEntry)}
-                className={`text-xs px-2 py-1 rounded-lg transition-all ${viewEntry.pinned ? 'text-amber-400 bg-amber-500/10' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/80'}`}>
-                <Pin size={13} />
-              </button>
-              <button onClick={() => { const e = viewEntry; setViewEntry(null); openEdit(e) }}
-                className="text-xs text-amber-500 hover:text-amber-400 px-2 py-1 rounded-lg hover:bg-amber-600/10 transition-all">Edit</button>
-            </div>
+            {!isSharedView && (
+              <div className="flex gap-1">
+                <button onClick={() => togglePin(viewEntry)}
+                  className={`text-xs px-2 py-1 rounded-lg transition-all ${viewEntry.pinned ? 'text-amber-400 bg-amber-500/10' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/80'}`}>
+                  <Pin size={13} />
+                </button>
+                <button onClick={() => { const e = viewEntry; setViewEntry(null); openEdit(e) }}
+                  className="text-xs text-amber-500 hover:text-amber-400 px-2 py-1 rounded-lg hover:bg-amber-600/10 transition-all">Edit</button>
+              </div>
+            )}
           </div>
 
           {/* View Tabs */}
