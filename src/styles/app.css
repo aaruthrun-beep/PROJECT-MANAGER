@@ -27,14 +27,14 @@
   color-scheme: light;
   --accent: #d97706;
   --accent-dim: #b45309;
-  --accent-glow: rgba(217, 119, 6, 0.12);
-  --card: rgba(255, 255, 255, 0.9);
-  --card-border: rgba(0, 0, 0, 0.08);
-  --card-hover: rgba(0, 0, 0, 0.03);
-  --bg: #fafafa;
-  --text: #18181b;
-  --text-dim: #71717a;
-  --scrollbar: rgba(0, 0, 0, 0.1);
+  --accent-glow: rgba(217, 119, 6, 0.15);
+  --card: rgba(255, 255, 255, 0.95);
+  --card-border: rgba(0, 0, 0, 0.1);
+  --card-hover: rgba(217, 119, 6, 0.06);
+  --bg: #f5f0eb;
+  --text: #1c1917;
+  --text-dim: #78716c;
+  --scrollbar: rgba(0, 0, 0, 0.12);
 }
 
 * { box-sizing: border-box; }
@@ -126,3 +126,10 @@ html { scroll-behavior: smooth; }
   .safe-top { padding-top: env(safe-area-inset-top); }
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 }
+
+/* Light mode overrides for hardcoded dark classes */
+:root:not(.dark) .bg-black\/40 { background: rgba(245, 240, 235, 0.9); }
+:root:not(.dark) .bg-black\/30 { background: rgba(245, 240, 235, 0.8); }
+:root:not(.dark) .bg-black\/60 { background: rgba(0, 0, 0, 0.15); }
+:root:not(.dark) .border-white\/5 { border-color: rgba(0, 0, 0, 0.08); }
+:root:not(.dark) header .bg-black\/30 { background: rgba(245, 240, 235, 0.95); }
