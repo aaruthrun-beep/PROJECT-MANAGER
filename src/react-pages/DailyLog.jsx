@@ -13,11 +13,11 @@ import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 
 const moods = [
-  { value: 'productive', label: 'Productive', color: 'emerald', emoji: 'ðŸš€' },
-  { value: 'struggling', label: 'Struggling', color: 'red', emoji: 'ðŸ˜¤' },
-  { value: 'neutral', label: 'Neutral', color: 'gray', emoji: 'ðŸ˜' },
-  { value: 'breakthrough', label: 'Breakthrough', color: 'purple', emoji: 'ðŸ’¡' },
-  { value: 'learning', label: 'Learning', color: 'sky', emoji: 'ðŸ“š' },
+  { value: 'productive', label: 'Productive', color: 'emerald', emoji: '\u{1F680}' },
+  { value: 'struggling', label: 'Struggling', color: 'red', emoji: '\u{1F624}' },
+  { value: 'neutral', label: 'Neutral', color: 'gray', emoji: '\u{1F610}' },
+  { value: 'breakthrough', label: 'Breakthrough', color: 'purple', emoji: '\u{1F4A1}' },
+  { value: 'learning', label: 'Learning', color: 'sky', emoji: '\u{1F4DA}' },
 ]
 
 const emptyForm = { title: '', content: '', date: new Date().toISOString().split('T')[0], projectId: '', mood: null, tags: [], pinned: false, images: [], videos: [] }
