@@ -12,8 +12,11 @@ export default function LogEntryCard({ entry, onDelete, onView, onEdit, onPin, c
     e.stopPropagation()
     const base = window.location.pathname.match(/^\/[^/]+\//)?.[0] || '/'
     const sync = getSyncConfig()
-    const gistParam = sync.gistId ? `?gist=${sync.gistId}` : ''
-    const shareUrl = `${window.location.origin}${base}${gistParam}#log-${entry.id}`
+    if (!sync.gistId) {
+      toast('Configure Gist sync in Settings first to share with others', { icon: '\u26A0\uFE0F', duration: 4000 })
+      return
+    }
+    const shareUrl = `${window.location.origin}${base}?gist=${sync.gistId}#log-${entry.id}`
     const shareData = {
       title: entry.title,
       text: entry.content ? entry.content.slice(0, 200) : 'Check out this log entry',
