@@ -1,52 +1,67 @@
-﻿import { useState, useRef, useEffect, useCallback } from 'react'
+﻿import { useState, useRef, useEffect } from 'react'
 import { Play, Square, RotateCcw, Clock } from 'lucide-react'
 import Button from './Button'
 import toast from 'react-hot-toast'
 
 export default function Timer({ onLog }) {
   const [running, setRunning] = useState(false)
-  const [elapsed, setElapsed] = useState(0)
+  const [display, setDisplay] = useState(0)
   const [description, setDescription] = useState('')
-  const intervalRef = useRef(null)
   const startRef = useRef(null)
+  const elapsedRef = useRef(0)
+  const intervalRef = useRef(null)
 
   useEffect(() => {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [])
 
   const start = () => {
-    startRef.current = Date.now() - elapsed
+    elapsedRef.current = 0
+    startRef.current = Date.now()
+    setDisplay(0)
     setRunning(true)
     intervalRef.current = setInterval(() => {
-      setElapsed(Date.now() - startRef.current)
-    }, 100)
+      elapsedRef.current = Date.now() - startRef.current
+      setDisplay(elapsedRef.current)
+    }, 200)
   }
 
-  const stop = useCallback(() => {
+  const stop = () => {
     if (!running) return
     setRunning(false)
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    if (elapsed < 1000) {
-      toast.error('Too short â€” less than 1 second')
-      setElapsed(0)
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+    const ms = elapsedRef.current
+    if (ms < 1000) {
+      toast.error('Too short — less than 1 second')
+      elapsedRef.current = 0
+      setDisplay(0)
       return
     }
-    const duration = Math.round(elapsed / 60000)
+    const duration = Math.round(ms / 60000)
     if (duration < 1) {
       toast.error('Minimum 1 minute to log')
-      setElapsed(0)
+      elapsedRef.current = 0
+      setDisplay(0)
       return
     }
-    onLog({ duration, description: description || `Timer â€” ${formatTime(elapsed)}` })
-    setElapsed(0)
+    onLog({ duration, description: description || `Timer — ${formatTime(ms)}` })
+    elapsedRef.current = 0
+    setDisplay(0)
     setDescription('')
     toast.success(`Logged ${duration} min`)
-  }, [running, elapsed, description, onLog])
+  }
 
   const reset = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current)
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
     setRunning(false)
-    setElapsed(0)
+    elapsedRef.current = 0
+    setDisplay(0)
     setDescription('')
   }
 
@@ -63,7 +78,7 @@ export default function Timer({ onLog }) {
       <div className="flex items-center gap-3 mb-3">
         <Clock size={16} className="text-amber-500 shrink-0" />
         <span className="text-2xl font-mono font-bold text-white tabular-nums tracking-wider">
-          {formatTime(elapsed)}
+          {formatTime(display)}
         </span>
         <div className="flex gap-1.5 ml-auto shrink-0">
           {!running ? (
