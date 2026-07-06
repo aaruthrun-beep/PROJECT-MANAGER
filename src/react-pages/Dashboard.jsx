@@ -73,6 +73,32 @@ export default function Dashboard() {
         </div>
       </ScrollReveal>
 
+      {data.projects.length === 0 && isSyncConfigured() && (
+        <ScrollReveal>
+          <div className="glass rounded-xl p-4 mb-6 border border-amber-600/30 flex items-center gap-4">
+            <Cloud size={20} className="text-amber-400 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-white font-medium">Cloud backup found</p>
+              <p className="text-xs text-zinc-400">Your data is available in GitHub Gist. Restore it to this device.</p>
+            </div>
+            <Button size="sm" onClick={async () => {
+              setRestoring(true)
+              try {
+                const gistData = await pullFromGist()
+                saveData(gistData)
+                toast.success('Data restored from Gist')
+                refresh()
+              } catch (e) {
+                toast.error(e.message)
+              }
+              setRestoring(false)
+            }} disabled={restoring} icon={Download}>
+              {restoring ? 'Restoring...' : 'Restore'}
+            </Button>
+          </div>
+        </ScrollReveal>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
         {statCards.map((stat, i) => {
           const Icon = stat.icon
