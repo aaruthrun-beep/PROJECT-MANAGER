@@ -143,4 +143,5 @@ html { scroll-behavior: smooth; }
 :root:not(.dark) .bg-zinc-900 { background: rgba(245, 245, 245, 0.9); }
 :root:not(.dark) .bg-zinc-700\/60 { background: rgba(0, 0, 0, 0.06); }
 :root:not(.dark) .bg-white\/5 { background: rgba(0, 0, 0, 0.04); }
+:root:not(.dark) .bg-white\/\[0\.03\] { background: rgba(0, 0, 0, 0.04); }
 :root:not(.dark) .hover\:bg-zinc-800\/80:hover { background: rgba(255, 255, 255, 0.9); }
