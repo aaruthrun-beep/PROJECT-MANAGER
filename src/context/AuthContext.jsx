@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
     loading: !isLoaded,
     login: () => clerk.openSignIn(),
     logout: () => signOut().then(() => window.location.reload()),
-    isOwner: !!isSignedIn,
+    isOwner: !!isSignedIn && user?.primaryEmailAddress?.emailAddress === import.meta.env.PUBLIC_AUTHORIZED_EMAIL,
   }
 
   return (
