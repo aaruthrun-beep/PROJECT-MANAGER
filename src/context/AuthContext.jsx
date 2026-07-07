@@ -10,6 +10,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     user: isSignedIn ? user : null,
+    isSignedIn: !!isSignedIn,
     loading: !isLoaded,
     login: () => clerk.openSignIn(),
     logout: () => signOut().then(() => window.location.reload()),
