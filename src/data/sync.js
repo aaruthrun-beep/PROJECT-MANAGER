@@ -19,10 +19,10 @@ export function getSyncConfig() {
 export function saveSyncConfig({ token, gistId, user }) {
   saveGistConfig({ token, gistId })
   if (user && gistId) {
-    user.update({ publicMetadata: { ...user.publicMetadata, gistId } }).then(() => {
-      console.log('Gist ID saved to Clerk profile')
+    user.update({ unsafeMetadata: { ...user.unsafeMetadata, projectHubToken: token, projectHubGistId: gistId } }).then(() => {
+      console.log('Sync config saved to Clerk profile')
     }).catch(e => {
-      console.warn('Failed to save Gist ID to Clerk:', e)
+      console.warn('Failed to save sync config to Clerk:', e)
     })
   }
 }
@@ -31,18 +31,18 @@ export async function restoreGistIdFromClerk(user) {
   if (!user) return null
   try {
     await user.reload()
-    const gistId = user.publicMetadata?.gistId
+    const token = user.unsafeMetadata?.projectHubToken
+    const gistId = user.unsafeMetadata?.projectHubGistId
     if (gistId) {
-      const existing = getGistConfig()
-      saveGistConfig({ ...existing, gistId })
+      saveGistConfig({ token: token || '', gistId })
       return gistId
     }
   } catch (e) {
     console.warn('Failed to reload user metadata:', e)
-    const gistId = user?.publicMetadata?.gistId
+    const token = user?.unsafeMetadata?.projectHubToken
+    const gistId = user?.unsafeMetadata?.projectHubGistId
     if (gistId) {
-      const existing = getGistConfig()
-      saveGistConfig({ ...existing, gistId })
+      saveGistConfig({ token: token || '', gistId })
       return gistId
     }
   }

@@ -116,13 +116,13 @@ function AppShell() {
           </div>
         </motion.header>
         <AnimatePresence mode="wait">
-          <motion.main key={location.pathname}
+            <motion.main key={location.pathname + '-' + dataVersion}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
             transition={{ duration: 0.15 }}
             className="flex-1 p-3 sm:p-4 lg:p-8 overflow-y-auto relative z-10">
-            <Routes location={location} key={dataVersion}>
+            <Routes location={location}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
