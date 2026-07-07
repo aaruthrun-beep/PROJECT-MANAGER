@@ -56,7 +56,11 @@ function AppShell() {
 
     if (gistId) {
       setLoadingGist(true)
-      tryLoadFromGistParam().finally(() => {
+      tryLoadFromGistParam().then(data => {
+        if (!data) {
+          toast.error('Failed to load shared data from Gist. The Gist may be private or rate-limited.')
+        }
+      }).finally(() => {
         setLoadingGist(false)
         setDataVersion(v => v + 1)
         handleHash()
