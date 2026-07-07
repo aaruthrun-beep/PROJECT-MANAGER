@@ -28,9 +28,10 @@ PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_YOUR_KEY_HERE
   }
 
   const baseUrl = import.meta.env.BASE_URL
+  const redirectUrl = typeof window !== 'undefined' ? window.location.origin + baseUrl : baseUrl
 
   return (
-    <ClerkProvider publishableKey={CLERK_KEY} afterSignInUrl={baseUrl} afterSignUpUrl={baseUrl}>
+    <ClerkProvider publishableKey={CLERK_KEY} afterSignInUrl={redirectUrl} afterSignUpUrl={redirectUrl}>
       <BrowserRouter basename={baseUrl}>
         <App />
       </BrowserRouter>

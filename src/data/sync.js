@@ -31,18 +31,18 @@ export async function restoreGistIdFromClerk(user) {
   if (!user) return null
   try {
     await user.reload()
-    const token = user.unsafeMetadata?.projectHubToken
-    const gistId = user.unsafeMetadata?.projectHubGistId
+    const token = user.unsafeMetadata?.projectHubToken || user.publicMetadata?.projectHubToken || ''
+    const gistId = user.unsafeMetadata?.projectHubGistId || user.publicMetadata?.gistId || ''
     if (gistId) {
-      saveGistConfig({ token: token || '', gistId })
+      saveGistConfig({ token, gistId })
       return gistId
     }
   } catch (e) {
     console.warn('Failed to reload user metadata:', e)
-    const token = user?.unsafeMetadata?.projectHubToken
-    const gistId = user?.unsafeMetadata?.projectHubGistId
+    const token = user?.unsafeMetadata?.projectHubToken || user?.publicMetadata?.projectHubToken || ''
+    const gistId = user?.unsafeMetadata?.projectHubGistId || user?.publicMetadata?.gistId || ''
     if (gistId) {
-      saveGistConfig({ token: token || '', gistId })
+      saveGistConfig({ token, gistId })
       return gistId
     }
   }
