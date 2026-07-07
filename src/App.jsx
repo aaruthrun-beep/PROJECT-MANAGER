@@ -28,6 +28,7 @@ import Login from './react-pages/Login'
 function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loadingGist, setLoadingGist] = useState(false)
+  const [dataVersion, setDataVersion] = useState(0)
   const location = useLocation()
   const navigate = useNavigate()
   const { isOwner, user } = useAuth()
@@ -71,6 +72,7 @@ function AppShell() {
         setLoadingGist(true)
         pullFromGist().then(gistData => {
           saveData(gistData)
+          setDataVersion(v => v + 1)
           toast.success('Data restored from cloud')
         }).catch(e => {
           toast.error('Failed to restore from Gist: ' + e.message)
@@ -120,7 +122,7 @@ function AppShell() {
             exit={{ opacity: 0, y: -5 }}
             transition={{ duration: 0.15 }}
             className="flex-1 p-3 sm:p-4 lg:p-8 overflow-y-auto relative z-10">
-            <Routes location={location}>
+            <Routes location={location} key={dataVersion}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
