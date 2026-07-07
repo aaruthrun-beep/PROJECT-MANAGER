@@ -65,18 +65,16 @@ function AppShell() {
   }, [navigate])
 
   useEffect(() => {
-    if (!isOwner) return
+    if (!user) return
     restoreGistIdFromClerk(user)
-    const data = loadData()
-    const hasData = data.projects?.length > 0 || data.logEntries?.length > 0
-    if (!hasData && isSyncConfigured()) {
+    if (isSyncConfigured()) {
       setLoadingGist(true)
       pullFromGist().then(gistData => {
         saveData(gistData)
-        toast.success('Data synced from Gist')
+        toast.success('Data restored from cloud')
       }).catch(() => {}).finally(() => setLoadingGist(false))
     }
-  }, [isOwner, user])
+  }, [user])
 
   const isRemote = !!getRemoteData()
   const isGistView = !!new URLSearchParams(window.location.search).get('gist')
