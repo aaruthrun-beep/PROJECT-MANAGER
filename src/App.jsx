@@ -66,14 +66,17 @@ function AppShell() {
 
   useEffect(() => {
     if (!user) return
-    restoreGistIdFromClerk(user)
-    if (isSyncConfigured()) {
-      setLoadingGist(true)
-      pullFromGist().then(gistData => {
-        saveData(gistData)
-        toast.success('Data restored from cloud')
-      }).catch(() => {}).finally(() => setLoadingGist(false))
-    }
+    restoreGistIdFromClerk(user).then(gistId => {
+      if (gistId) {
+        setLoadingGist(true)
+        pullFromGist().then(gistData => {
+          saveData(gistData)
+          toast.success('Data restored from cloud')
+        }).catch(e => {
+          toast.error('Failed to restore from Gist: ' + e.message)
+        }).finally(() => setLoadingGist(false))
+      }
+    })
   }, [user])
 
   const isRemote = !!getRemoteData()

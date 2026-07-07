@@ -28,11 +28,23 @@ export function saveSyncConfig({ token, gistId, user }) {
 }
 
 export async function restoreGistIdFromClerk(user) {
-  const gistId = user?.publicMetadata?.gistId
-  if (gistId) {
-    const existing = getGistConfig()
-    saveGistConfig({ ...existing, gistId })
-    return gistId
+  if (!user) return null
+  try {
+    await user.reload()
+    const gistId = user.publicMetadata?.gistId
+    if (gistId) {
+      const existing = getGistConfig()
+      saveGistConfig({ ...existing, gistId })
+      return gistId
+    }
+  } catch (e) {
+    console.warn('Failed to reload user metadata:', e)
+    const gistId = user?.publicMetadata?.gistId
+    if (gistId) {
+      const existing = getGistConfig()
+      saveGistConfig({ ...existing, gistId })
+      return gistId
+    }
   }
   return null
 }
