@@ -58,6 +58,7 @@ function AppShell() {
       setLoadingGist(true)
       tryLoadFromGistParam().finally(() => {
         setLoadingGist(false)
+        setDataVersion(v => v + 1)
         handleHash()
       })
     } else {
