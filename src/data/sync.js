@@ -141,6 +141,7 @@ export async function pushToGist(data) {
   if (!res.ok) {
     if (res.status === 404) throw new Error('Gist not found.')
     if (res.status === 403) throw new Error('GitHub rate limit or bad token (needs gist scope).')
+    if (res.status === 409) throw new Error('Gist conflict. Delete the Gist ID in Settings and click the cloud icon to create a fresh one.')
     throw new Error(`GitHub API error: ${res.status}`)
   }
 
