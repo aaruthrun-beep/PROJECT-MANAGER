@@ -70,8 +70,14 @@ async function tryAutoSync(data) {
   try {
     const mod = await import('./sync')
     if (!mod.isGistWriteable()) return
-    await mod.pushToGist(data)
+    const { rawUrl } = await mod.pushToGist(data)
+    const user = mod.getClerkUser()
+    if (rawUrl && user && mod.isGistWriteable()) {
+      const cfg = mod.getSyncConfig()
+      mod.saveSyncConfig({ ...cfg, rawUrl, user })
+    }
   } catch (e) {
+    if (e.message === 'Failed to fetch') return // network issue, skip silently
     const { default: toast } = await import('react-hot-toast')
     toast.error('Sync failed: ' + e.message)
   }

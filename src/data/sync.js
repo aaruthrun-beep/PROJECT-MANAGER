@@ -1,6 +1,14 @@
-import toast from 'react-hot-toast'
-
 const GIST_API = 'https://api.github.com/gists'
+
+let _clerkUser = null
+
+export function setClerkUser(user) {
+  _clerkUser = user
+}
+
+export function getClerkUser() {
+  return _clerkUser
+}
 
 function getGistConfig() {
   try {
