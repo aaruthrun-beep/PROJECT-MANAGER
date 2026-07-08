@@ -87,7 +87,12 @@ export default function Settings() {
     setSyncing(true)
     try {
       const data = loadData()
-      await pushToGist(data)
+      const { rawUrl } = await pushToGist(data)
+      if (rawUrl) {
+        saveSyncConfig({ ...getSyncConfig(), rawUrl, user: clerkUser.user })
+      } else {
+        saveSyncConfig({ ...getSyncConfig(), user: clerkUser.user })
+      }
       toast.success('Data pushed to GitHub Gist')
       syncStatus().then(setSyncInfo)
     } catch (e) {

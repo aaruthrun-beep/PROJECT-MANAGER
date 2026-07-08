@@ -79,11 +79,11 @@ export async function pullFromGist() {
     } catch {}
   }
 
-  // Fallback: use the Gist API
-  const headers = { Accept: 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' }
-  if (token) headers['Authorization'] = `Bearer ${token}`
+  // Fallback: use the Gist API (no custom headers to avoid CORS preflight on mobile)
+  const fetchOpts = {}
+  if (token) fetchOpts.headers = { Authorization: `Bearer ${token}` }
 
-  const res = await fetch(`${GIST_API}/${gistId}?_=${Date.now()}`, { headers })
+  const res = await fetch(`${GIST_API}/${gistId}?_=${Date.now()}`, fetchOpts)
 
   if (!res.ok) {
     if (res.status === 404) throw new Error('Gist not found. Check the Gist ID.')
@@ -137,11 +137,13 @@ export async function pushToGist(data) {
   }
 
   // Save the raw URL from the response for future direct reads
+  let rawUrl = ''
   try {
     const gist = await res.clone().json()
-    const rawUrl = gist.files?.['project-hub-data.json']?.raw_url
+    rawUrl = gist.files?.['project-hub-data.json']?.raw_url || ''
     if (rawUrl) saveGistConfig({ ...cfg, rawUrl })
   } catch {}
+  return { rawUrl }
 }
 
 export async function createGist(token, data) {
