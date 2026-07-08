@@ -155,8 +155,32 @@ export async function syncStatus() {
 }
 
 export async function uploadImageToCdn(file) {
+  const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
+  const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
+
+  if (tgToken && chatId) {
+    const formData = new FormData()
+    formData.append('chat_id', chatId)
+    formData.append('photo', file)
+
+    const res = await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (res.ok) {
+      const result = await res.json()
+      const fileId = result.result.photo.pop().file_id
+      const fileRes = await fetch(`https://api.telegram.org/bot${tgToken}/getFile?file_id=${fileId}`)
+      if (fileRes.ok) {
+        const fileData = await fileRes.json()
+        return `https://api.telegram.org/file/bot${tgToken}/${fileData.result.file_path}`
+      }
+    }
+  }
+
   const apiKey = import.meta.env.PUBLIC_IMGBB_API_KEY
-  if (!apiKey) throw new Error('ImgBB API key not set. Add PUBLIC_IMGBB_API_KEY to .env')
+  if (!apiKey) throw new Error('No image upload configured. Set PUBLIC_TELEGRAM_BOT_TOKEN + PUBLIC_TELEGRAM_CHANNEL_ID or PUBLIC_IMGBB_API_KEY in .env')
 
   const base64 = await new Promise((resolve, reject) => {
     const reader = new FileReader()
