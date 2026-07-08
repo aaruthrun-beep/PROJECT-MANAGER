@@ -155,31 +155,29 @@ export async function syncStatus() {
 }
 
 export async function uploadImageToCdn(file) {
-  const token = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
-  const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
-  if (!token) throw new Error('Telegram bot token not set. Add PUBLIC_TELEGRAM_BOT_TOKEN to .env')
-  if (!chatId) throw new Error('Telegram channel ID not set. Add PUBLIC_TELEGRAM_CHANNEL_ID to .env')
+  const apiKey = import.meta.env.PUBLIC_IMGBB_API_KEY
+  if (!apiKey) throw new Error('ImgBB API key not set. Add PUBLIC_IMGBB_API_KEY to .env')
+
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result.split(',')[1])
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.readAsDataURL(file)
+  })
 
   const formData = new FormData()
-  formData.append('chat_id', chatId)
-  formData.append('photo', file)
+  formData.append('image', base64)
 
-  const res = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+  const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
     method: 'POST',
     body: formData,
   })
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.description || `Telegram upload failed: ${res.status}`)
+    throw new Error(body.error?.message || `Upload failed: ${res.status}`)
   }
 
   const result = await res.json()
-  const fileId = result.result.photo.pop().file_id
-
-  const fileRes = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${fileId}`)
-  if (!fileRes.ok) throw new Error('Failed to get Telegram file info')
-
-  const fileData = await fileRes.json()
-  return `https://api.telegram.org/file/bot${token}/${fileData.result.file_path}`
+  return result.data.url
 }

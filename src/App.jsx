@@ -55,28 +55,36 @@ function AppShell() {
     }
 
     if (gistId) {
-      setLoadingGist(true)
-      tryLoadFromGistParam().then(data => {
-        if (!data) {
-          toast.error('Failed to load shared data from Gist. The Gist may be private or rate-limited.')
-        }
-      }).finally(() => {
-        setLoadingGist(false)
-        setDataVersion(v => v + 1)
+      if (sessionStorage.getItem('_gist_loaded_' + gistId)) {
+        window.history.replaceState(null, '', window.location.pathname + (hash || ''))
         handleHash()
-      })
+      } else {
+        setLoadingGist(true)
+        tryLoadFromGistParam().then(data => {
+          if (data) {
+            saveData(data)
+            sessionStorage.setItem('_gist_loaded_' + gistId, '1')
+            window.history.replaceState(null, '', window.location.pathname + (hash || ''))
+            setDataVersion(v => v + 1)
+            handleHash()
+          } else {
+            toast.error('Failed to load shared data. The Gist may be private or rate-limited.')
+          }
+        }).finally(() => setLoadingGist(false))
+      }
     } else {
       handleHash()
     }
   }, [navigate])
 
   useEffect(() => {
-    if (!user) return
+    if (!user || sessionStorage.getItem('_auto_synced')) return
     restoreGistIdFromClerk(user).then(gistId => {
       if (gistId) {
         setLoadingGist(true)
         pullFromGist().then(gistData => {
           saveData(gistData)
+          sessionStorage.setItem('_auto_synced', '1')
           setDataVersion(v => v + 1)
           toast.success('Data restored from cloud')
         }).catch(e => {
