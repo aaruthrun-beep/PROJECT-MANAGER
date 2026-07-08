@@ -67,8 +67,9 @@ export function saveData(data) {
 }
 
 async function tryAutoSync(data) {
+  let mod
   try {
-    const mod = await import('./sync')
+    mod = await import('./sync')
     if (!mod.isGistWriteable()) return
     const { rawUrl } = await mod.pushToGist(data)
     const user = mod.getClerkUser()
@@ -77,7 +78,15 @@ async function tryAutoSync(data) {
       mod.saveSyncConfig({ ...cfg, rawUrl, user })
     }
   } catch (e) {
-    if (e.message === 'Failed to fetch') return // network issue, skip silently
+    if (e.message === 'Failed to fetch') return
+    if (e.message.includes('Gist conflict')) {
+      localStorage.removeItem('project_hub_sync')
+      if (mod) {
+        const user = mod.getClerkUser()
+        if (user) user.update({ unsafeMetadata: { projectHubToken: '', projectHubGistId: '', projectHubRawUrl: '' } }).catch(() => {})
+      }
+      return
+    }
     const { default: toast } = await import('react-hot-toast')
     toast.error('Sync failed: ' + e.message)
   }
