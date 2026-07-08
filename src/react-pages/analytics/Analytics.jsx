@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion'
 import { BarChart3, TrendingUp, Calendar, Clock, Target, Activity, Zap } from 'lucide-react'
 import { loadData, getStats } from '../../data/store'
+import { useDataVersion } from '../../context/DataContext'
 import Card from '../../ui/Card'
 import ActivityChart from '../../components/charts/ActivityChart'
 import ProjectPieChart from '../../components/charts/ProjectPieChart'
@@ -12,12 +13,13 @@ import { format, subDays, eachDayOfInterval } from 'date-fns'
 export default function Analytics() {
   const [data, setData] = useState({ projects: [], logEntries: [], timeEntries: [] })
   const [stats, setStats] = useState({})
+  const { dataVersion } = useDataVersion()
 
   useEffect(() => {
     const d = loadData()
     setData(d)
     setStats(getStats())
-  }, [])
+  }, [dataVersion])
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
   const chartHeight = isMobile ? 150 : 200

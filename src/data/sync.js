@@ -1,3 +1,5 @@
+import toast from 'react-hot-toast'
+
 const GIST_API = 'https://api.github.com/gists'
 
 function getGistConfig() {
@@ -63,8 +65,8 @@ export async function pullFromGist() {
   const { gistId } = getGistConfig()
   if (!gistId) throw new Error('Sync not configured - no Gist ID')
 
-  const res = await fetch(`${GIST_API}/${gistId}`, {
-    headers: { Accept: 'application/vnd.github.v3+json' },
+  const res = await fetch(`${GIST_API}/${gistId}?_=${Date.now()}`, {
+    headers: { Accept: 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' },
   })
 
   if (!res.ok) {
@@ -159,23 +161,35 @@ export async function uploadImageToCdn(file) {
   const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
 
   if (tgToken && chatId) {
-    const formData = new FormData()
-    formData.append('chat_id', chatId)
-    formData.append('photo', file)
+    try {
+      const formData = new FormData()
+      formData.append('chat_id', chatId)
+      formData.append('photo', file)
 
-    const res = await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, {
-      method: 'POST',
-      body: formData,
-    })
+      const res = await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, {
+        method: 'POST',
+        body: formData,
+      })
 
-    if (res.ok) {
-      const result = await res.json()
-      const fileId = result.result.photo.pop().file_id
-      const fileRes = await fetch(`https://api.telegram.org/bot${tgToken}/getFile?file_id=${fileId}`)
-      if (fileRes.ok) {
-        const fileData = await fileRes.json()
-        return `https://api.telegram.org/file/bot${tgToken}/${fileData.result.file_path}`
+      if (res.ok) {
+        const result = await res.json()
+        const fileId = result.result.photo.pop().file_id
+        const fileRes = await fetch(`https://api.telegram.org/bot${tgToken}/getFile?file_id=${fileId}`)
+        if (fileRes.ok) {
+          const fileData = await fileRes.json()
+          return `https://api.telegram.org/file/bot${tgToken}/${fileData.result.file_path}`
+        }
+        const err = await fileRes.text().catch(() => '')
+        console.warn('Telegram getFile failed:', err)
+        toast.error('Telegram upload failed (getFile): ' + (err || 'unknown'))
+      } else {
+        const err = await res.text().catch(() => '')
+        console.warn('Telegram sendPhoto failed:', res.status, err)
+        toast.error(`Telegram upload failed (${res.status}): ${err || 'no response body'}`)
       }
+    } catch (e) {
+      console.warn('Telegram upload error:', e)
+      toast.error('Telegram upload error: ' + e.message)
     }
   }
 

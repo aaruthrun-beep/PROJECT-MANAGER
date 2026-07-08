@@ -62,16 +62,19 @@ export async function tryLoadFromGistParam() {
 export function saveData(data) {
   if (!requireAuth()) return
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  _remoteData = null
   tryAutoSync(data)
 }
 
 async function tryAutoSync(data) {
   try {
-    const { isSyncConfigured, pushToGist } = await import('./sync')
-    if (isSyncConfigured()) {
-      pushToGist(data).catch(() => {})
-    }
-  } catch {}
+    const mod = await import('./sync')
+    if (!mod.isGistWriteable()) return
+    await mod.pushToGist(data)
+  } catch (e) {
+    const { default: toast } = await import('react-hot-toast')
+    toast.error('Sync failed: ' + e.message)
+  }
 }
 
 export function generateId() {

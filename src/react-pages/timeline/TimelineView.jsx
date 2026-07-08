@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion'
 import { Calendar, Radio, Flag, Clock } from 'lucide-react'
 import { loadData } from '../../data/store'
+import { useDataVersion } from '../../context/DataContext'
 import Card from '../../ui/Card'
 import Badge from '../../ui/Badge'
 import { format } from 'date-fns'
@@ -9,8 +10,9 @@ import { format } from 'date-fns'
 export default function TimelineView() {
   const [data, setData] = useState({ projects: [], logEntries: [], milestones: [], timeEntries: [] })
   const [filter, setFilter] = useState('all')
+  const { dataVersion } = useDataVersion()
 
-  useEffect(() => { setData(loadData()) }, [])
+  useEffect(() => { setData(loadData()) }, [dataVersion])
 
   const events = []
 

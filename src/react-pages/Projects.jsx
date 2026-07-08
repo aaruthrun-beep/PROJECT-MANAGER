@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Plus, Search, SlidersHorizontal, LayoutGrid, List, FolderKanban as FolderKanbanIcon } from 'lucide-react'
 import { loadData, addProject, deleteProject } from '../data/store'
 import { useAuth } from '../context/AuthContext'
+import { useDataVersion } from '../context/DataContext'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
@@ -19,6 +20,7 @@ const priorities = [
 
 export default function Projects() {
   const { isOwner } = useAuth()
+  const { dataVersion } = useDataVersion()
   const [data, setData] = useState({ projects: [] })
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -28,7 +30,7 @@ export default function Projects() {
   const [form, setForm] = useState({ name: '', description: '', status: 'active', priority: 'medium', tags: [] })
 
   const refresh = () => setData(loadData())
-  useEffect(refresh, [])
+  useEffect(refresh, [dataVersion])
 
   let filtered = data.projects
   if (search) {

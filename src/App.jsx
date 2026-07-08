@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
@@ -6,6 +6,7 @@ import { Menu, Eye, Cloud } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { DataProvider, useDataVersion } from './context/DataContext'
 import { tryLoadFromGistParam, getRemoteData, saveData, loadData } from './data/store'
 import { isSyncConfigured, pullFromGist, restoreGistIdFromClerk } from './data/sync'
 import Sidebar from './components/Sidebar'
@@ -28,7 +29,7 @@ import Login from './react-pages/Login'
 function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loadingGist, setLoadingGist] = useState(false)
-  const [dataVersion, setDataVersion] = useState(0)
+  const { dataVersion, bumpDataVersion } = useDataVersion()
   const location = useLocation()
   const navigate = useNavigate()
   const { isOwner, user } = useAuth()
@@ -65,7 +66,7 @@ function AppShell() {
             saveData(data)
             sessionStorage.setItem('_gist_loaded_' + gistId, '1')
             window.history.replaceState(null, '', window.location.pathname + (hash || ''))
-            setDataVersion(v => v + 1)
+            bumpDataVersion()
             handleHash()
           } else {
             toast.error('Failed to load shared data. The Gist may be private or rate-limited.')
@@ -77,22 +78,30 @@ function AppShell() {
     }
   }, [navigate])
 
-  useEffect(() => {
-    if (!user || sessionStorage.getItem('_auto_synced')) return
-    restoreGistIdFromClerk(user).then(gistId => {
-      if (gistId) {
-        setLoadingGist(true)
-        pullFromGist().then(gistData => {
-          saveData(gistData)
-          sessionStorage.setItem('_auto_synced', '1')
-          setDataVersion(v => v + 1)
-          toast.success('Data restored from cloud')
-        }).catch(e => {
-          toast.error('Failed to restore from Gist: ' + e.message)
-        }).finally(() => setLoadingGist(false))
-      }
-    })
+  const autoSync = useCallback(async (quiet) => {
+    if (!user) return
+    const gistId = await restoreGistIdFromClerk(user)
+    if (!gistId) return
+    setLoadingGist(true)
+    try {
+      const gistData = await pullFromGist()
+      saveData(gistData)
+      bumpDataVersion()
+      if (!quiet) toast.success('Data restored from cloud')
+    } catch (e) {
+      toast.error('Failed to restore from Gist: ' + e.message)
+    } finally {
+      setLoadingGist(false)
+    }
   }, [user])
+
+  useEffect(() => { autoSync() }, [autoSync])
+
+  useEffect(() => {
+    const onFocus = () => { autoSync(true) }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [autoSync])
 
   const isRemote = !!getRemoteData()
   const isGistView = !!new URLSearchParams(window.location.search).get('gist')
@@ -129,7 +138,7 @@ function AppShell() {
           </div>
         </motion.header>
         <AnimatePresence mode="wait">
-            <motion.main key={location.pathname + '-' + dataVersion}
+            <motion.main key={location.pathname}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
@@ -158,6 +167,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <DataProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/*" element={<AppShell />} />
@@ -171,6 +181,7 @@ export default function App() {
           success: { iconTheme: { primary: '#10b981', secondary: '#111' } },
           error: { iconTheme: { primary: '#ef4444', secondary: '#111' } },
         }} />
+        </DataProvider>
       </AuthProvider>
     </ThemeProvider>
   )

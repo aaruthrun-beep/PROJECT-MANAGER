@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { loadData, getLogEntriesForDate } from '../../data/store'
+import { useDataVersion } from '../../context/DataContext'
 import Card from '../../ui/Card'
 import Badge from '../../ui/Badge'
 import Modal from '../../ui/Modal'
@@ -12,8 +13,9 @@ export default function CalendarView() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
   const [dayEntries, setDayEntries] = useState([])
+  const { dataVersion } = useDataVersion()
 
-  useEffect(() => { setData(loadData()) }, [])
+  useEffect(() => { setData(loadData()) }, [dataVersion])
 
   const monthStart = startOfMonth(currentMonth)
   const monthEnd = endOfMonth(currentMonth)

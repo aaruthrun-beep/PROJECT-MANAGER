@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, Calendar, Clock, Flag, MessageSquare, BarChart3 } from 'lucide-react'
 import { getProject, updateProject, deleteProject, getLogEntries, addLogEntry, deleteLogEntry, getMilestones, addMilestone, updateMilestone, deleteMilestone, addComment, getComments, deleteComment, addTimeEntry, getTimeEntries, getTotalTimeForProject, addTag } from '../data/store'
 import { useAuth } from '../context/AuthContext'
+import { useDataVersion } from '../context/DataContext'
 import Card from '../ui/Card'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
@@ -42,6 +43,7 @@ export default function ProjectDetail() {
   const [milestoneForm, setMilestoneForm] = useState({ name: '', dueDate: '' })
   const [timeForm, setTimeForm] = useState({ duration: 30, description: '', date: new Date().toISOString().split('T')[0] })
   const [commentForm, setCommentForm] = useState({ text: '' })
+  const { dataVersion } = useDataVersion()
 
   const refresh = () => {
     const p = getProject(id)
@@ -53,7 +55,7 @@ export default function ProjectDetail() {
     setTimeEntries(getTimeEntries(id))
     setTotalTime(getTotalTimeForProject(id))
   }
-  useEffect(refresh, [id])
+  useEffect(refresh, [id, dataVersion])
 
   const handleUpdate = () => {
     if (!editForm.name?.trim()) return

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, Plus, Search, Sparkles, TrendingUp, Zap, Pin, PenLine } from 'lucide-react'
 import { loadData, addLogEntry, updateLogEntry, deleteLogEntry, getRemoteData } from '../data/store'
 import { useAuth } from '../context/AuthContext'
+import { useDataVersion } from '../context/DataContext'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
 import Modal from '../ui/Modal'
@@ -24,6 +25,7 @@ const emptyForm = { title: '', content: '', date: new Date().toISOString().split
 
 export default function DailyLog() {
   const { isOwner } = useAuth()
+  const { dataVersion } = useDataVersion()
   const isSharedView = !!getRemoteData()
   const [data, setData] = useState({ projects: [], logEntries: [] })
   const [search, setSearch] = useState('')
@@ -39,7 +41,7 @@ export default function DailyLog() {
 
   const refresh = useCallback(() => setData(loadData()), [])
 
-  useEffect(() => { refresh() }, [refresh])
+  useEffect(() => { refresh() }, [refresh, dataVersion])
 
   const [highlightId, setHighlightId] = useState(null)
 

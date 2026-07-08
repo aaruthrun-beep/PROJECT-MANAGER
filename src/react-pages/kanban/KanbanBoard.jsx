@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Plus, MoreHorizontal } from 'lucide-react'
 import { loadData, updateProject } from '../../data/store'
 import { useAuth } from '../../context/AuthContext'
+import { useDataVersion } from '../../context/DataContext'
 import Card from '../../ui/Card'
 import Badge from '../../ui/Badge'
 import { useNavigate } from 'react-router-dom'
@@ -16,12 +17,13 @@ const columns = [
 
 export default function KanbanBoard() {
   const { isOwner } = useAuth()
+  const { dataVersion } = useDataVersion()
   const [data, setData] = useState({ projects: [] })
   const [dragging, setDragging] = useState(null)
   const dragId = useRef(null)
   const navigate = useNavigate()
 
-  useEffect(() => { setData(loadData()) }, [])
+  useEffect(() => { setData(loadData()) }, [dataVersion])
 
   const getProjectsForColumn = (status) => data.projects.filter(p => (p.status || 'active') === status)
 

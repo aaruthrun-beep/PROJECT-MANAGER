@@ -5,6 +5,7 @@ import { useUser } from '@clerk/clerk-react'
 import { loadData, saveData, exportData, importData, generateId } from '../data/store'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
+import { useDataVersion } from '../context/DataContext'
 import { getSyncConfig, saveSyncConfig, isSyncConfigured, isGistWriteable, pushToGist, pullFromGist, createGist, syncStatus } from '../data/sync'
 import Card from '../ui/Card'
 import Button from '../ui/Button'
@@ -14,6 +15,7 @@ import toast from 'react-hot-toast'
 export default function Settings() {
   const { theme, setTheme } = useTheme()
   const { isOwner } = useAuth()
+  const { dataVersion } = useDataVersion()
   const clerkUser = useUser()
   const [data, setData] = useState(null)
   const [importText, setImportText] = useState('')
@@ -22,7 +24,7 @@ export default function Settings() {
   const [syncing, setSyncing] = useState(false)
   const [syncInfo, setSyncInfo] = useState(null)
 
-  useEffect(() => { setData(loadData()) }, [])
+  useEffect(() => { setData(loadData()) }, [dataVersion])
 
   useEffect(() => {
     const c = getSyncConfig()

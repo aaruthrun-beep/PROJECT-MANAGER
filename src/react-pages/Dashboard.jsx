@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { FolderKanban, CalendarPlus, TrendingUp, Activity, Clock, Target, Sparkles, Zap, RefreshCw, Cloud, Download } from 'lucide-react'
 import { loadData, getStats, saveData } from '../data/store'
 import { isSyncConfigured, pullFromGist } from '../data/sync'
+import { useDataVersion } from '../context/DataContext'
 import Card from '../ui/Card'
 import Button from '../ui/Button'
 import ProjectCard from '../components/ProjectCard'
@@ -19,17 +20,16 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [confetti, setConfetti] = useState(false)
   const [restoring, setRestoring] = useState(false)
+  const { dataVersion } = useDataVersion()
 
   const refresh = useCallback(() => {
     setLoading(true)
-    setTimeout(() => {
-      setData(loadData())
-      setStats(getStats())
-      setLoading(false)
-    }, 400)
+    setData(loadData())
+    setStats(getStats())
+    setLoading(false)
   }, [])
 
-  useEffect(refresh, [])
+  useEffect(refresh, [dataVersion])
 
   if (loading || !data) return <div className="px-4"><SkeletonPage /></div>
 
