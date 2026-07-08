@@ -233,14 +233,8 @@ export async function uploadImageToCdn(file) {
   const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
   if (tgToken && chatId) {
     try {
-      const tgRes = await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto?chat_id=${chatId}&photo=${encodeURIComponent(url)}`)
-      if (!tgRes.ok) {
-        const err = await tgRes.text().catch(() => '')
-        console.warn('Telegram sendPhoto (url) failed:', tgRes.status, err)
-      }
-    } catch (e) {
-      console.warn('Telegram sendPhoto (url) error:', e)
-    }
+      await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto?chat_id=${chatId}&photo=${encodeURIComponent(url)}`, { mode: 'no-cors' })
+    } catch {}
   }
 
   return url
