@@ -8,7 +8,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { DataProvider, useDataVersion } from './context/DataContext'
 import { tryLoadFromGistParam, getRemoteData, saveData } from './data/store'
-import { pullFromGist, restoreGistIdFromClerk } from './data/sync'
+import { pullFromGist, restoreGistIdFromClerk, getSyncConfig } from './data/sync'
 import Sidebar from './components/Sidebar'
 import GlobalSearch from './components/GlobalSearch'
 import NotificationBell from './components/NotificationBell'
@@ -80,6 +80,7 @@ function AppShell() {
 
   const autoSync = useCallback(async (quiet) => {
     if (!user) return
+    const cfg = getSyncConfig()
     const gistId = await restoreGistIdFromClerk(user)
     if (!gistId) return
     setLoadingGist(true)
@@ -89,7 +90,8 @@ function AppShell() {
       bumpDataVersion()
       if (!quiet) toast.success('Data restored from cloud')
     } catch (e) {
-      toast.error('Failed to restore from Gist: ' + e.message)
+      const hasRaw = cfg?.rawUrl ? 'yes' : 'no'
+      toast.error('Sync: ' + e.message + (e.message === 'Failed to fetch' ? ` (gist:${gistId.slice(0,8)}, rawUrl:${hasRaw})` : ''))
     } finally {
       setLoadingGist(false)
     }
