@@ -226,7 +226,7 @@ export async function uploadImageToCdn(file) {
   }
 
   const result = await res.json()
-  const url = result.data.url
+  const url = result.data.display_url || result.data.image?.url || result.data.url
 
   const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
   const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
