@@ -115,9 +115,9 @@ export default function Settings() {
     setSyncing(true)
     try {
       const data = loadData()
-      const { gistId, gistUrl } = await createGist(syncConfig.token, data)
-      setSyncConfig(prev => ({ ...prev, gistId }))
-      saveSyncConfig({ token: syncConfig.token, gistId, user: clerkUser.user })
+      const { gistId, gistUrl, rawUrl } = await createGist(syncConfig.token, data)
+      setSyncConfig(prev => ({ ...prev, gistId, rawUrl }))
+      saveSyncConfig({ token: syncConfig.token, gistId, rawUrl, user: clerkUser.user })
       toast.success(`Gist created! ID: ${gistId}`)
       syncStatus().then(setSyncInfo)
     } catch (e) {

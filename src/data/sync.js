@@ -7,7 +7,7 @@ function getGistConfig() {
     const raw = localStorage.getItem('project_hub_sync')
     if (raw) return JSON.parse(raw)
   } catch {}
-  return { token: '', gistId: '' }
+  return { token: '', gistId: '', rawUrl: '' }
 }
 
 function saveGistConfig(config) {
@@ -18,8 +18,10 @@ export function getSyncConfig() {
   return getGistConfig()
 }
 
-export function saveSyncConfig({ token, gistId, user }) {
-  saveGistConfig({ token, gistId })
+export function saveSyncConfig({ token, gistId, rawUrl, user }) {
+  const cfg = { token, gistId }
+  if (rawUrl) cfg.rawUrl = rawUrl
+  saveGistConfig(cfg)
   if (user && gistId) {
     user.update({ unsafeMetadata: { ...user.unsafeMetadata, projectHubToken: token, projectHubGistId: gistId } }).then(() => {
       console.log('Sync config saved to Clerk profile')
@@ -62,9 +64,18 @@ export function isGistWriteable() {
 }
 
 export async function pullFromGist() {
-  const { token, gistId } = getGistConfig()
+  const { rawUrl, token, gistId } = getGistConfig()
   if (!gistId) throw new Error('Sync not configured - no Gist ID')
 
+  // Try the raw URL first (avoids api.github.com entirely which may be blocked)
+  if (rawUrl) {
+    try {
+      const res = await fetch(`${rawUrl}?_=${Date.now()}`, { cache: 'no-store' })
+      if (res.ok) return await res.json()
+    } catch {}
+  }
+
+  // Fallback: use the Gist API
   const headers = { Accept: 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
@@ -80,6 +91,11 @@ export async function pullFromGist() {
   const file = gist.files?.['project-hub-data.json']
   if (!file) throw new Error('Gist has no project-hub-data.json file.')
 
+  // Save the raw URL for future direct fetches
+  if (file.raw_url) {
+    saveGistConfig({ ...getGistConfig(), rawUrl: file.raw_url })
+  }
+
   if (file.content && !file.truncated) {
     try { return JSON.parse(file.content) } catch {}
   }
@@ -90,7 +106,8 @@ export async function pullFromGist() {
 }
 
 export async function pushToGist(data) {
-  const { token, gistId } = getGistConfig()
+  const cfg = getGistConfig()
+  const { token, gistId } = cfg
   if (!token || !gistId) throw new Error('Sync not configured')
 
   const body = {
@@ -114,6 +131,13 @@ export async function pushToGist(data) {
     if (res.status === 403) throw new Error('GitHub rate limit or bad token (needs gist scope).')
     throw new Error(`GitHub API error: ${res.status}`)
   }
+
+  // Save the raw URL from the response for future direct reads
+  try {
+    const gist = await res.clone().json()
+    const rawUrl = gist.files?.['project-hub-data.json']?.raw_url
+    if (rawUrl) saveGistConfig({ ...cfg, rawUrl })
+  } catch {}
 }
 
 export async function createGist(token, data) {
@@ -141,7 +165,8 @@ export async function createGist(token, data) {
   }
 
   const gist = await res.json()
-  return { gistId: gist.id, gistUrl: gist.html_url }
+  const rawUrl = gist.files?.['project-hub-data.json']?.raw_url || ''
+  return { gistId: gist.id, gistUrl: gist.html_url, rawUrl }
 }
 
 export async function syncStatus() {
