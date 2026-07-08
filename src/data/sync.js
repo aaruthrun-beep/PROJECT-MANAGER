@@ -62,12 +62,13 @@ export function isGistWriteable() {
 }
 
 export async function pullFromGist() {
-  const { gistId } = getGistConfig()
+  const { token, gistId } = getGistConfig()
   if (!gistId) throw new Error('Sync not configured - no Gist ID')
 
-  const res = await fetch(`${GIST_API}/${gistId}?_=${Date.now()}`, {
-    headers: { Accept: 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' },
-  })
+  const headers = { Accept: 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const res = await fetch(`${GIST_API}/${gistId}?_=${Date.now()}`, { headers })
 
   if (!res.ok) {
     if (res.status === 404) throw new Error('Gist not found. Check the Gist ID.')
@@ -79,7 +80,12 @@ export async function pullFromGist() {
   const file = gist.files?.['project-hub-data.json']
   if (!file) throw new Error('Gist has no project-hub-data.json file.')
 
+  if (file.content && !file.truncated) {
+    try { return JSON.parse(file.content) } catch {}
+  }
+
   const contentRes = await fetch(file.raw_url)
+  if (!contentRes.ok) throw new Error(`Failed to fetch raw content: ${contentRes.status}`)
   return await contentRes.json()
 }
 
