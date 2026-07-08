@@ -157,44 +157,8 @@ export async function syncStatus() {
 }
 
 export async function uploadImageToCdn(file) {
-  const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
-  const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
-
-  if (tgToken && chatId) {
-    try {
-      const formData = new FormData()
-      formData.append('chat_id', chatId)
-      formData.append('photo', file)
-
-      const res = await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (res.ok) {
-        const result = await res.json()
-        const fileId = result.result.photo.pop().file_id
-        const fileRes = await fetch(`https://api.telegram.org/bot${tgToken}/getFile?file_id=${fileId}`)
-        if (fileRes.ok) {
-          const fileData = await fileRes.json()
-          return `https://api.telegram.org/file/bot${tgToken}/${fileData.result.file_path}`
-        }
-        const err = await fileRes.text().catch(() => '')
-        console.warn('Telegram getFile failed:', err)
-        toast.error('Telegram upload failed (getFile): ' + (err || 'unknown'))
-      } else {
-        const err = await res.text().catch(() => '')
-        console.warn('Telegram sendPhoto failed:', res.status, err)
-        toast.error(`Telegram upload failed (${res.status}): ${err || 'no response body'}`)
-      }
-    } catch (e) {
-      console.warn('Telegram upload error:', e)
-      toast.error('Telegram upload error: ' + e.message)
-    }
-  }
-
   const apiKey = import.meta.env.PUBLIC_IMGBB_API_KEY
-  if (!apiKey) throw new Error('No image upload configured. Set PUBLIC_TELEGRAM_BOT_TOKEN + PUBLIC_TELEGRAM_CHANNEL_ID or PUBLIC_IMGBB_API_KEY in .env')
+  if (!apiKey) throw new Error('No image upload configured. Set PUBLIC_IMGBB_API_KEY in .env')
 
   const base64 = await new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -217,5 +181,21 @@ export async function uploadImageToCdn(file) {
   }
 
   const result = await res.json()
-  return result.data.url
+  const url = result.data.url
+
+  const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
+  const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
+  if (tgToken && chatId) {
+    try {
+      const tgRes = await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto?chat_id=${chatId}&photo=${encodeURIComponent(url)}`)
+      if (!tgRes.ok) {
+        const err = await tgRes.text().catch(() => '')
+        console.warn('Telegram sendPhoto (url) failed:', tgRes.status, err)
+      }
+    } catch (e) {
+      console.warn('Telegram sendPhoto (url) error:', e)
+    }
+  }
+
+  return url
 }

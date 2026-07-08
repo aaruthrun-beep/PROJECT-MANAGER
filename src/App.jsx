@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
-import { Menu, Eye, Cloud } from 'lucide-react'
+import { Menu, Cloud, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { DataProvider, useDataVersion } from './context/DataContext'
-import { tryLoadFromGistParam, getRemoteData, saveData, loadData } from './data/store'
-import { isSyncConfigured, pullFromGist, restoreGistIdFromClerk } from './data/sync'
+import { tryLoadFromGistParam, getRemoteData, saveData } from './data/store'
+import { pullFromGist, restoreGistIdFromClerk } from './data/sync'
 import Sidebar from './components/Sidebar'
 import GlobalSearch from './components/GlobalSearch'
 import NotificationBell from './components/NotificationBell'
@@ -133,6 +133,10 @@ function AppShell() {
           </div>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <LockBadge />
+            <button onClick={() => autoSync(true)} title="Refresh data from cloud"
+              className="p-2 rounded-xl text-zinc-500 hover:text-white hover:bg-white/[0.03] transition-all">
+              <RefreshCw size={16} className={loadingGist ? 'animate-spin' : ''} />
+            </button>
             <ThemeToggle />
             <NotificationBell />
           </div>
