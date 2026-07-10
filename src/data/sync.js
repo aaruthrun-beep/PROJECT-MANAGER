@@ -5,12 +5,11 @@ let _clerkUser = null
 export function setClerkUser(user) {
   _clerkUser = user
 }
-
 export function getClerkUser() {
   return _clerkUser
 }
 
-function getGistConfig() {
+function getCfg() {
   try {
     const raw = localStorage.getItem('project_hub_sync')
     if (raw) return JSON.parse(raw)
@@ -18,68 +17,70 @@ function getGistConfig() {
   return { token: '', gistId: '', rawUrl: '' }
 }
 
-function saveGistConfig(config) {
-  localStorage.setItem('project_hub_sync', JSON.stringify(config))
+function saveCfg(cfg) {
+  localStorage.setItem('project_hub_sync', JSON.stringify(cfg))
 }
 
 export function getSyncConfig() {
-  return getGistConfig()
+  return getCfg()
 }
 
+/** Write sync config locally + to Clerk metadata (if user available). */
 export function saveSyncConfig({ token, gistId, rawUrl, user }) {
   const cfg = { token, gistId }
   if (rawUrl) cfg.rawUrl = rawUrl
-  saveGistConfig(cfg)
-  if (user && gistId) {
+  saveCfg(cfg)
+  const u = user || _clerkUser
+  if (u && gistId) {
     const meta = { projectHubToken: token, projectHubGistId: gistId }
     if (rawUrl) meta.projectHubRawUrl = rawUrl
-    user.update({ unsafeMetadata: { ...user.unsafeMetadata, ...meta } }).then(() => {
-      console.log('Sync config saved to Clerk profile')
-    }).catch(e => {
-      console.warn('Failed to save sync config to Clerk:', e)
-    })
+    u.update({ unsafeMetadata: { ...u.unsafeMetadata, ...meta } }).catch(() => {})
   }
 }
 
+/** Read sync config from Clerk metadata and save locally. */
 export async function restoreGistIdFromClerk(user) {
   if (!user) return null
   try {
     await user.reload()
-    const token = user.unsafeMetadata?.projectHubToken || user.publicMetadata?.projectHubToken || ''
-    const gistId = user.unsafeMetadata?.projectHubGistId || user.publicMetadata?.gistId || ''
+    const token = user.unsafeMetadata?.projectHubToken || ''
+    const gistId = user.unsafeMetadata?.projectHubGistId || ''
     const rawUrl = user.unsafeMetadata?.projectHubRawUrl || ''
     if (gistId) {
-      saveGistConfig({ token, gistId, rawUrl })
+      saveCfg({ token, gistId, rawUrl })
       return gistId
     }
-  } catch (e) {
-    console.warn('Failed to reload user metadata:', e)
-    const token = user?.unsafeMetadata?.projectHubToken || user?.publicMetadata?.projectHubToken || ''
-    const gistId = user?.unsafeMetadata?.projectHubGistId || user?.publicMetadata?.gistId || ''
+  } catch {
+    const token = user?.unsafeMetadata?.projectHubToken || ''
+    const gistId = user?.unsafeMetadata?.projectHubGistId || ''
     const rawUrl = user?.unsafeMetadata?.projectHubRawUrl || ''
-    if (gistId) {
-      saveGistConfig({ token, gistId, rawUrl })
-      return gistId
-    }
+    if (gistId) { saveCfg({ token, gistId, rawUrl }); return gistId }
   }
   return null
 }
 
-export function isSyncConfigured() {
-  const c = getGistConfig()
-  return !!c.gistId
+/** Completely clear sync config — local + Clerk (stops all sync). */
+export function clearSync(user) {
+  localStorage.removeItem('project_hub_sync')
+  const u = user || _clerkUser
+  if (u) {
+    u.update({ unsafeMetadata: { projectHubToken: '', projectHubGistId: '', projectHubRawUrl: '' } }).catch(() => {})
+  }
 }
 
+export function isSyncConfigured() {
+  return !!getCfg().gistId
+}
 export function isGistWriteable() {
-  const c = getGistConfig()
+  const c = getCfg()
   return !!(c.token && c.gistId)
 }
 
+/** Pull data from Gist — tries rawUrl first, then Gist API. Silent on network failures. */
 export async function pullFromGist() {
-  const { rawUrl, token, gistId } = getGistConfig()
-  if (!gistId) throw new Error('Sync not configured - no Gist ID')
+  const { rawUrl, token, gistId } = getCfg()
+  if (!gistId) throw new Error('No Gist ID configured')
 
-  // Try the raw URL first (avoids api.github.com entirely which may be blocked)
   if (rawUrl) {
     try {
       const res = await fetch(`${rawUrl}?_=${Date.now()}`, { cache: 'no-store' })
@@ -87,46 +88,36 @@ export async function pullFromGist() {
     } catch {}
   }
 
-  // Fallback: use the Gist API (no custom headers to avoid CORS preflight on mobile)
-  const fetchOpts = {}
-  if (token) fetchOpts.headers = { Authorization: `Bearer ${token}` }
+  const opts = {}
+  if (token) opts.headers = { Authorization: `Bearer ${token}` }
 
-  const res = await fetch(`${GIST_API}/${gistId}?_=${Date.now()}`, fetchOpts)
-
+  const res = await fetch(`${GIST_API}/${gistId}?_=${Date.now()}`, opts)
   if (!res.ok) {
-    if (res.status === 404) throw new Error('Gist not found. Check the Gist ID.')
-    if (res.status === 403) throw new Error('GitHub rate limit or bad token.')
-    throw new Error(`GitHub API error: ${res.status}`)
+    if (res.status === 404) throw new Error('Gist not found')
+    if (res.status === 403) throw new Error('GitHub rate limit or bad token')
+    throw new Error(`GitHub error ${res.status}`)
   }
 
   const gist = await res.json()
   const file = gist.files?.['project-hub-data.json']
-  if (!file) throw new Error('Gist has no project-hub-data.json file.')
+  if (!file) throw new Error('No project-hub-data.json in Gist')
 
-  // Save the raw URL for future direct fetches
-  if (file.raw_url) {
-    saveGistConfig({ ...getGistConfig(), rawUrl: file.raw_url })
-  }
+  if (file.raw_url) saveCfg({ ...getCfg(), rawUrl: file.raw_url })
 
   if (file.content && !file.truncated) {
     try { return JSON.parse(file.content) } catch {}
   }
 
-  const contentRes = await fetch(file.raw_url)
-  if (!contentRes.ok) throw new Error(`Failed to fetch raw content: ${contentRes.status}`)
-  return await contentRes.json()
+  const body = await fetch(file.raw_url)
+  if (!body.ok) throw new Error(`Raw fetch error ${body.status}`)
+  return await body.json()
 }
 
+/** Push data to Gist. On 409 → auto-clear sync. Returns { rawUrl }. */
 export async function pushToGist(data) {
-  const cfg = getGistConfig()
+  const cfg = getCfg()
   const { token, gistId } = cfg
   if (!token || !gistId) throw new Error('Sync not configured')
-
-  const body = {
-    files: {
-      'project-hub-data.json': { content: JSON.stringify(data, null, 2) },
-    },
-  }
 
   const res = await fetch(`${GIST_API}/${gistId}`, {
     method: 'PATCH',
@@ -135,35 +126,30 @@ export async function pushToGist(data) {
       'Content-Type': 'application/json',
       Accept: 'application/vnd.github.v3+json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ files: { 'project-hub-data.json': { content: JSON.stringify(data, null, 2) } } }),
   })
 
   if (!res.ok) {
-    if (res.status === 404) throw new Error('Gist not found.')
-    if (res.status === 403) throw new Error('GitHub rate limit or bad token (needs gist scope).')
-    if (res.status === 409) throw new Error('Gist conflict. Delete the Gist ID in Settings and click the cloud icon to create a fresh one.')
-    throw new Error(`GitHub API error: ${res.status}`)
+    if (res.status === 404) throw new Error('Gist not found')
+    if (res.status === 403) throw new Error('GitHub rate limit or bad token')
+    if (res.status === 409) {
+      clearSync()
+      throw new Error('Gist conflict — sync disabled')
+    }
+    throw new Error(`GitHub error ${res.status}`)
   }
 
-  // Save the raw URL from the response for future direct reads
   let rawUrl = ''
   try {
     const gist = await res.clone().json()
     rawUrl = gist.files?.['project-hub-data.json']?.raw_url || ''
-    if (rawUrl) saveGistConfig({ ...cfg, rawUrl })
+    if (rawUrl) saveCfg({ ...cfg, rawUrl })
   } catch {}
   return { rawUrl }
 }
 
+/** Create a new public Gist. Returns { gistId, gistUrl, rawUrl }. */
 export async function createGist(token, data) {
-  const body = {
-    description: 'ProjectHub sync data',
-    public: true,
-    files: {
-      'project-hub-data.json': { content: JSON.stringify(data, null, 2) },
-    },
-  }
-
   const res = await fetch(GIST_API, {
     method: 'POST',
     headers: {
@@ -171,30 +157,33 @@ export async function createGist(token, data) {
       'Content-Type': 'application/json',
       Accept: 'application/vnd.github.v3+json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      description: 'ProjectHub sync data',
+      public: true,
+      files: { 'project-hub-data.json': { content: JSON.stringify(data, null, 2) } },
+    }),
   })
 
   if (!res.ok) {
-    if (res.status === 403) throw new Error('GitHub rate limit or bad token (needs gist scope).')
-    throw new Error(`GitHub API error: ${res.status}`)
+    if (res.status === 403) throw new Error('GitHub rate limit or bad token (needs gist scope)')
+    throw new Error(`GitHub error ${res.status}`)
   }
 
   const gist = await res.json()
-  const rawUrl = gist.files?.['project-hub-data.json']?.raw_url || ''
-  return { gistId: gist.id, gistUrl: gist.html_url, rawUrl }
+  return { gistId: gist.id, gistUrl: gist.html_url, rawUrl: gist.files?.['project-hub-data.json']?.raw_url || '' }
 }
 
+/** Check Gist connection status. */
 export async function syncStatus() {
-  const { token, gistId } = getGistConfig()
+  const { token, gistId } = getCfg()
   if (!token || !gistId) return { connected: false, message: 'Not configured' }
-
   try {
     const res = await fetch(`${GIST_API}/${gistId}`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' },
+      headers: { Authorization: `Bearer ${token}` },
     })
     if (res.ok) {
       const gist = await res.json()
-      return { connected: true, message: `Connected — updated ${new Date(gist.updated_at).toLocaleDateString()}` }
+      return { connected: true, message: `Connected — ${new Date(gist.updated_at).toLocaleDateString()}` }
     }
     return { connected: false, message: `Error ${res.status}` }
   } catch {
@@ -202,9 +191,10 @@ export async function syncStatus() {
   }
 }
 
+/** Upload image to ImgBB, then notify Telegram (no-cors, best-effort). */
 export async function uploadImageToCdn(file) {
   const apiKey = import.meta.env.PUBLIC_IMGBB_API_KEY
-  if (!apiKey) throw new Error('No image upload configured. Set PUBLIC_IMGBB_API_KEY in .env')
+  if (!apiKey) throw new Error('No image upload configured')
 
   const base64 = await new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -213,17 +203,13 @@ export async function uploadImageToCdn(file) {
     reader.readAsDataURL(file)
   })
 
-  const formData = new FormData()
-  formData.append('image', base64)
+  const fd = new FormData()
+  fd.append('image', base64)
 
-  const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-    method: 'POST',
-    body: formData,
-  })
-
+  const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { method: 'POST', body: fd })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.error?.message || `Upload failed: ${res.status}`)
+    throw new Error(body.error?.message || `Upload failed ${res.status}`)
   }
 
   const result = await res.json()

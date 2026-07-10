@@ -8,7 +8,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { DataProvider, useDataVersion } from './context/DataContext'
 import { tryLoadFromGistParam, getRemoteData, saveData } from './data/store'
-import { pullFromGist, restoreGistIdFromClerk, getSyncConfig, setClerkUser } from './data/sync'
+import { pullFromGist, restoreGistIdFromClerk, setClerkUser } from './data/sync'
 import Sidebar from './components/Sidebar'
 import GlobalSearch from './components/GlobalSearch'
 import NotificationBell from './components/NotificationBell'
@@ -80,7 +80,6 @@ function AppShell() {
 
   const autoSync = useCallback(async (quiet) => {
     if (!user) return
-    const cfg = getSyncConfig()
     const gistId = await restoreGistIdFromClerk(user)
     if (!gistId) return
     setLoadingGist(true)
@@ -89,18 +88,14 @@ function AppShell() {
       saveData(gistData)
       bumpDataVersion()
       if (!quiet) toast.success('Data restored from cloud')
-    } catch (e) {
-      if (e.message === 'Failed to fetch') {
-        if (!quiet) toast.error('Cloud sync unavailable (network)')
-      } else {
-        toast.error('Sync: ' + e.message)
-      }
+    } catch {
+      if (!quiet) toast.error('Cloud sync unavailable')
     } finally {
       setLoadingGist(false)
     }
   }, [user])
 
-  useEffect(() => { autoSync() }, [autoSync])
+  useEffect(() => { autoSync(true) }, [autoSync])
 
   useEffect(() => { setClerkUser(user) }, [user])
 
@@ -140,7 +135,7 @@ function AppShell() {
           </div>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <LockBadge />
-            <button onClick={() => autoSync(true)} title="Refresh data from cloud"
+            <button onClick={() => autoSync()} title="Refresh data from cloud"
               className="p-2 rounded-xl text-zinc-500 hover:text-white hover:bg-white/[0.03] transition-all">
               <RefreshCw size={16} className={loadingGist ? 'animate-spin' : ''} />
             </button>
