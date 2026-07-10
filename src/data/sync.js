@@ -191,11 +191,12 @@ export async function syncStatus() {
   }
 }
 
-/** Upload image to ImgBB, then also send to Telegram directly (best-effort). */
+/** Upload image to ImgBB (for app storage), then upload directly to Telegram (CORS works). */
 export async function uploadImageToCdn(file) {
   const apiKey = import.meta.env.PUBLIC_IMGBB_API_KEY
   if (!apiKey) throw new Error('No image upload configured')
 
+  // Step 1: Upload to ImgBB (for thumbnails in the app)
   const base64 = await new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result.split(',')[1])
@@ -209,28 +210,27 @@ export async function uploadImageToCdn(file) {
   const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { method: 'POST', body: fd })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.error?.message || `Upload failed ${res.status}`)
+    throw new Error(body.error?.message || `ImgBB upload failed ${res.status}`)
   }
 
   const result = await res.json()
   const url = result.data.display_url || result.data.image?.url || result.data.url
 
-  // Send to Telegram: try direct file upload (FormData, simple content-type, no preflight)
+  // Step 2: Upload DIRECTLY to Telegram via FormData (Telegram supports CORS)
   const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
   const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
   if (tgToken && chatId) {
-    try {
-      const tgFd = new FormData()
-      tgFd.append('chat_id', chatId)
-      tgFd.append('photo', file)
-      await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, {
-        method: 'POST', body: tgFd, mode: 'no-cors',
-      })
-    } catch {}
-    // Also try URL-based approach as backup
-    try {
-      await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto?chat_id=${chatId}&photo=${encodeURIComponent(url)}`, { mode: 'no-cors' })
-    } catch {}
+    const tgFd = new FormData()
+    tgFd.append('chat_id', chatId)
+    tgFd.append('photo', file, file.name)
+    const tgRes = await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, {
+      method: 'POST',
+      body: tgFd,
+    })
+    if (!tgRes.ok) {
+      const errText = await tgRes.text().catch(() => '')
+      throw new Error(`Telegram rejected (${tgRes.status}): ${errText.slice(0, 100)}`)
+    }
   }
 
   return url
