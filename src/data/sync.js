@@ -191,7 +191,7 @@ export async function syncStatus() {
   }
 }
 
-/** Upload image to ImgBB, then notify Telegram (no-cors, best-effort). */
+/** Upload image to ImgBB, then also send to Telegram directly (best-effort). */
 export async function uploadImageToCdn(file) {
   const apiKey = import.meta.env.PUBLIC_IMGBB_API_KEY
   if (!apiKey) throw new Error('No image upload configured')
@@ -215,9 +215,19 @@ export async function uploadImageToCdn(file) {
   const result = await res.json()
   const url = result.data.display_url || result.data.image?.url || result.data.url
 
+  // Send to Telegram: try direct file upload (FormData, simple content-type, no preflight)
   const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
   const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
   if (tgToken && chatId) {
+    try {
+      const tgFd = new FormData()
+      tgFd.append('chat_id', chatId)
+      tgFd.append('photo', file)
+      await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, {
+        method: 'POST', body: tgFd, mode: 'no-cors',
+      })
+    } catch {}
+    // Also try URL-based approach as backup
     try {
       await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto?chat_id=${chatId}&photo=${encodeURIComponent(url)}`, { mode: 'no-cors' })
     } catch {}
