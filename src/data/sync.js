@@ -191,6 +191,67 @@ export async function syncStatus() {
   }
 }
 
+/** Get all image URLs stored across log entries. */
+export function collectAllImageUrls(data) {
+  const urls = new Set()
+  for (const entry of (data.logEntries || [])) {
+    for (const url of (entry.images || [])) {
+      if (url) urls.add(url)
+    }
+  }
+  return [...urls]
+}
+
+/** Download an image URL as a File blob, then upload to Telegram directly. */
+export async function uploadUrlToTelegram(imageUrl) {
+  const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
+  const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
+  if (!tgToken || !chatId) throw new Error('Telegram not configured')
+
+  const imgRes = await fetch(imageUrl)
+  if (!imgRes.ok) throw new Error(`Failed to fetch image (${imgRes.status})`)
+
+  const blob = await imgRes.blob()
+  const ext = imageUrl.split('.').pop()?.split('?')[0] || 'jpg'
+  const file = new File([blob], `image.${ext}`, { type: blob.type || `image/${ext}` })
+
+  const fd = new FormData()
+  fd.append('chat_id', chatId)
+  fd.append('photo', file, file.name)
+  const tgRes = await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, { method: 'POST', body: fd })
+  if (!tgRes.ok) {
+    const errText = await tgRes.text().catch(() => '')
+    throw new Error(`Telegram rejected (${tgRes.status}): ${errText.slice(0, 80)}`)
+  }
+}
+
+/** Migrate all existing images from storage to Telegram. Returns count sent. */
+export async function migrateImagesToTelegram(data, onProgress) {
+  const allUrls = collectAllImageUrls(data)
+  if (!allUrls.length) throw new Error('No images found in data')
+
+  let sent = []
+  try { sent = JSON.parse(localStorage.getItem('telegram_migrated_urls') || '[]') } catch {}
+  const pending = allUrls.filter(u => !sent.includes(u))
+
+  if (!pending.length) throw new Error('All images already sent to Telegram')
+
+  let count = 0
+  for (let i = 0; i < pending.length; i++) {
+    const url = pending[i]
+    try {
+      await uploadUrlToTelegram(url)
+      sent.push(url)
+      localStorage.setItem('telegram_migrated_urls', JSON.stringify(sent))
+      count++
+      if (onProgress) onProgress({ current: i + 1, total: pending.length, url, status: 'ok' })
+    } catch (e) {
+      if (onProgress) onProgress({ current: i + 1, total: pending.length, url, status: e.message })
+    }
+  }
+  return count
+}
+
 /** Upload image to ImgBB (for app storage), then upload directly to Telegram (CORS works). */
 export async function uploadImageToCdn(file) {
   const apiKey = import.meta.env.PUBLIC_IMGBB_API_KEY

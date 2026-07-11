@@ -1,12 +1,12 @@
 ﻿import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Settings as SettingsIcon, Download, Upload, Trash2, Sun, Moon, Monitor, Keyboard, Bell, Database, GitFork, Cloud } from 'lucide-react'
+import { Settings as SettingsIcon, Download, Upload, Trash2, Sun, Moon, Monitor, Keyboard, Bell, Database, GitFork, Cloud, Send } from 'lucide-react'
 import { useUser } from '@clerk/clerk-react'
 import { loadData, saveData, exportData, importData, generateId } from '../data/store'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 import { useDataVersion } from '../context/DataContext'
-import { getSyncConfig, saveSyncConfig, isSyncConfigured, isGistWriteable, pushToGist, pullFromGist, createGist, syncStatus } from '../data/sync'
+import { getSyncConfig, saveSyncConfig, isSyncConfigured, isGistWriteable, pushToGist, pullFromGist, createGist, syncStatus, migrateImagesToTelegram, collectAllImageUrls } from '../data/sync'
 import Card from '../ui/Card'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
@@ -53,6 +53,25 @@ export default function Settings() {
       setData(loadData())
       toast.success('All data cleared')
     }
+  }
+
+  const [migrating, setMigrating] = useState(false)
+  const handleMigrate = async () => {
+    const data = loadData()
+    const urls = collectAllImageUrls(data)
+    if (!urls.length) { toast.error('No images found in data'); return }
+    setMigrating(true)
+    let lastToast
+    try {
+      const count = await migrateImagesToTelegram(data, ({ current, total, url, status }) => {
+        if (lastToast) toast.dismiss(lastToast)
+        lastToast = toast.loading(`Migrating ${current}/${total}...`)
+      })
+      toast.success(`${count} image(s) sent to Telegram`)
+    } catch (e) {
+      toast.error(e.message)
+    }
+    setMigrating(false)
   }
 
   const handleAddSampleData = () => {
@@ -304,6 +323,7 @@ export default function Settings() {
             )}
             <hr className="border-white/5" />
             {isOwner && <Button onClick={handleAddSampleData} variant="secondary" className="w-full justify-start">Add Sample Data</Button>}
+            {isOwner && <Button onClick={handleMigrate} disabled={migrating} variant="glass" className="w-full justify-start">{migrating ? 'Migrating...' : 'Send All Images to Telegram'}</Button>}
             {isOwner && <Button onClick={handleClearAll} variant="danger" icon={Trash2} className="w-full justify-start">Clear All Data</Button>}
           </div>
         </Card>
