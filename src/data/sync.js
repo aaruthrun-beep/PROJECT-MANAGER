@@ -245,21 +245,18 @@ export function sendToTelegram(url, context) {
     .catch(() => {})
 }
 
-/** Upload original file directly to Telegram for best quality. Fire this alongside sendToTelegram — it takes longer but produces a better image. */
-export function sendToTelegramFile(file, context, caption) {
+/** Upload original file directly to Telegram for best quality. Fire this alongside sendToTelegram — it avoids the URL-fetch compression Telegram applies. */
+export function sendToTelegramFile(file, context) {
   const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
   const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
   if (!tgToken || !chatId) return
 
   const c = buildCaption(context)
-  file.arrayBuffer().then(buffer => {
-    const blob = new Blob([buffer], { type: file.type })
-    const fd = new FormData()
-    fd.append('chat_id', chatId)
-    fd.append('photo', blob, file.name || 'photo.jpg')
-    if (c) { fd.append('caption', c); fd.append('parse_mode', 'HTML') }
-    fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, { method: 'POST', body: fd })
-      .then(r => { if (!r.ok) r.text().then(t => console.error('Telegram file error:', r.status, t.slice(0, 200))) })
-      .catch(() => {})
-  }).catch(() => {})
+  const fd = new FormData()
+  fd.append('chat_id', chatId)
+  fd.append('photo', file)
+  if (c) { fd.append('caption', c); fd.append('parse_mode', 'HTML') }
+  fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, { method: 'POST', body: fd })
+    .then(r => { if (!r.ok) r.text().then(t => console.error('Telegram file error:', r.status, t.slice(0, 200))) })
+    .catch(() => {})
 }
