@@ -401,7 +401,8 @@ export default function ProjectDetail() {
             <textarea value={logForm.content} onChange={e => setLogForm({ ...logForm, content: e.target.value })}
               className="w-full bg-zinc-800/80 border border-zinc-700/60 rounded-xl py-2.5 px-4 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-600/50 h-32 resize-none font-mono text-sm" placeholder="Write your notes... Markdown is supported" />
           </div>
-          <ImageUpload urls={logForm.images} onChange={(urls) => setLogForm({ ...logForm, images: urls })} />
+          <ImageUpload urls={logForm.images} onChange={(urls) => setLogForm({ ...logForm, images: urls })}
+            captionData={{ title: logForm.title, content: logForm.content, date: logForm.date, mood: logForm.mood, projectName: project?.name }} />
           <div className="space-y-1.5">
             <label className="text-sm text-zinc-400 block">Videos (YouTube URLs, one per line)</label>
             <textarea value={videosText} onChange={e => setVideosText(e.target.value)}

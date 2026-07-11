@@ -191,8 +191,22 @@ export async function syncStatus() {
   }
 }
 
+function buildCaption(context) {
+  if (!context) return ''
+  const parts = []
+  if (context.title) parts.push('<b>' + context.title.replace(/</g, '&lt;') + '</b>')
+  if (context.projectName) parts.push('<i>' + context.projectName.replace(/</g, '&lt;') + '</i>')
+  if (context.content) {
+    const preview = context.content.replace(/</g, '&lt;').slice(0, 200)
+    parts.push(preview)
+  }
+  if (context.date) parts.push(context.date)
+  if (context.mood) parts.push(context.mood)
+  return parts.join('\n').slice(0, 1024)
+}
+
 /** Upload image to both ImgBB (for web display) AND Telegram channel. */
-export async function uploadImageToCdn(file) {
+export async function uploadImageToCdn(file, context) {
   const apiKey = import.meta.env.PUBLIC_IMGBB_API_KEY
   if (!apiKey) throw new Error('No image upload configured')
 
@@ -220,10 +234,12 @@ export async function uploadImageToCdn(file) {
   const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
   const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
   if (tgToken && chatId) {
+    const caption = buildCaption(context)
     const params = new URLSearchParams({ chat_id: chatId, photo: url })
+    if (caption) params.set('parse_mode', 'HTML')
     fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, {
       method: 'POST',
-      body: params,
+      body: caption ? new URLSearchParams({ chat_id: chatId, photo: url, caption, parse_mode: 'HTML' }) : params,
     })
       .then(r => { if (!r.ok) r.text().then(t => console.error('Telegram error:', r.status, t.slice(0, 200))) })
       .catch(() => {})
