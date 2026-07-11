@@ -205,16 +205,48 @@ function buildCaption(context) {
   return parts.join('\n').slice(0, 1024)
 }
 
-/** Upload image to ImgBB only (for web display). Returns the CDN URL. */
+/** Resize image to max 1920px on longest side at 80% quality. Returns a Blob. */
+function compressImage(file, maxWidth = 1920, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      let w = img.naturalWidth, h = img.naturalHeight
+      if (w > maxWidth || h > maxWidth) {
+        const ratio = Math.min(maxWidth / w, maxWidth / h)
+        w = Math.round(w * ratio)
+        h = Math.round(h * ratio)
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      ctx.drawImage(img, 0, 0, w, h)
+      canvas.toBlob(blob => {
+        if (blob) resolve(blob)
+        else reject(new Error('Canvas compression failed'))
+      }, 'image/jpeg', quality)
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to decode image')) }
+    img.src = url
+  })
+}
+
+/** Upload compressed image to ImgBB (for web display). Returns the CDN URL. */
 export async function uploadImageToCdn(file) {
   const apiKey = import.meta.env.PUBLIC_IMGBB_API_KEY
   if (!apiKey) throw new Error('No image upload configured')
+
+  const compressed = await compressImage(file)
 
   const base64 = await new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result.split(',')[1])
     reader.onerror = () => reject(new Error('Failed to read file'))
-    reader.readAsDataURL(file)
+    reader.readAsDataURL(compressed)
   })
 
   const fd = new FormData()
