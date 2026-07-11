@@ -191,7 +191,7 @@ export async function syncStatus() {
   }
 }
 
-/** Upload image to both ImgBB (for web display) AND Telegram channel at the same time. */
+/** Upload image to both ImgBB (for web display) AND Telegram channel. */
 export async function uploadImageToCdn(file) {
   const apiKey = import.meta.env.PUBLIC_IMGBB_API_KEY
   if (!apiKey) throw new Error('No image upload configured')
@@ -216,22 +216,55 @@ export async function uploadImageToCdn(file) {
   const result = await res.json()
   const url = result.data.display_url || result.data.image?.url || result.data.url
 
-  // Step 2: Upload DIRECTLY to Telegram via FormData (Telegram supports CORS)
+  // Step 2: Non-blocking Telegram upload (fire-and-forget — no error toast)
   const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
   const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
   if (tgToken && chatId) {
-    const tgFd = new FormData()
-    tgFd.append('chat_id', chatId)
-    tgFd.append('photo', file, file.name)
-    const tgRes = await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, {
-      method: 'POST',
-      body: tgFd,
-    })
-    if (!tgRes.ok) {
-      const errText = await tgRes.text().catch(() => '')
-      throw new Error(`Telegram rejected (${tgRes.status}): ${errText.slice(0, 100)}`)
-    }
+    uploadToTelegram(file, url, tgToken, chatId).catch(() => {})
   }
 
   return url
+}
+
+async function sendPhotoBlob(blob, fileName, tgToken, chatId) {
+  const fd = new FormData()
+  fd.append('chat_id', chatId)
+  fd.append('photo', blob, fileName)
+
+  const res = await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, {
+    method: 'POST',
+    body: fd,
+  })
+
+  const text = await res.text().catch(() => '')
+  if (!res.ok) {
+    throw new Error(`Telegram ${res.status}: ${text.slice(0, 200)}`)
+  }
+  console.log('Telegram: upload OK —', text.slice(0, 100))
+}
+
+async function uploadToTelegram(file, imgbbUrl, tgToken, chatId) {
+  // Method 1: Fresh copy via arrayBuffer + new Blob (avoids FileReader stream issues)
+  try {
+    console.log('Telegram: trying arrayBuffer method...')
+    const buffer = await file.arrayBuffer()
+    const blob = new Blob([buffer], { type: file.type })
+    console.log('Telegram: arrayBuffer blob size:', blob.size)
+    await sendPhotoBlob(blob, file.name, tgToken, chatId)
+    return
+  } catch (e) {
+    console.warn('Telegram: arrayBuffer method failed:', e)
+  }
+
+  // Method 2: Download from ImgBB CDN (has CORS headers) and re-upload
+  try {
+    console.log('Telegram: trying download-from-ImgBB method...')
+    const r = await fetch(imgbbUrl)
+    if (!r.ok) throw new Error(`ImgBB download failed: ${r.status}`)
+    const blob = await r.blob()
+    console.log('Telegram: ImgBB download blob size:', blob.size)
+    await sendPhotoBlob(blob, file.name, tgToken, chatId)
+  } catch (e) {
+    console.error('Telegram: all upload methods failed:', e)
+  }
 }

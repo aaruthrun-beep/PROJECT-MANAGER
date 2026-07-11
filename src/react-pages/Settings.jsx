@@ -55,6 +55,18 @@ export default function Settings() {
     }
   }
 
+  const handleTestTelegram = async () => {
+    try {
+      const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
+      const res = await fetch(`https://api.telegram.org/bot${tgToken}/getMe`)
+      if (!res.ok) throw new Error(`Status ${res.status}`)
+      const data = await res.json()
+      toast.success(`Telegram OK — bot @${data.result.username}`)
+    } catch (e) {
+      toast.error(`Telegram test failed: ${e.message}`)
+    }
+  }
+
   const handleAddSampleData = () => {
     const sample = [
       { id: generateId(), name: 'Website Redesign', description: 'Complete overhaul of company website', status: 'active', priority: 'high', progress: 35, tags: [], createdAt: new Date(Date.now() - 7 * 86400000).toISOString() },
@@ -281,6 +293,17 @@ export default function Settings() {
                 <li>Click the <strong>cloud icon</strong> to create a new gist, or enter an existing Gist ID</li>
               </ol>
             </details>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex items-center gap-2 mb-4">
+            <Bell size={18} className="text-sky-400" />
+            <h3 className="text-lg font-semibold text-white">Telegram Bot</h3>
+          </div>
+          <div className="space-y-3">
+            <p className="text-xs text-zinc-500">Test if the Telegram Bot API is reachable from your browser.</p>
+            <Button onClick={handleTestTelegram} variant="glass" className="w-full justify-start">Test Telegram Connection</Button>
           </div>
         </Card>
 
