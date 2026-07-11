@@ -12,7 +12,7 @@ import Modal from '../ui/Modal'
 import Input from '../ui/Input'
 import LogEntryCard from '../components/LogEntryCard'
 import ImageUpload from '../ui/ImageUpload'
-import { sendToTelegram } from '../data/sync'
+import { sendToTelegram, sendToTelegramFile } from '../data/sync'
 import Timer from '../ui/Timer'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -41,6 +41,7 @@ export default function ProjectDetail() {
   const [editForm, setEditForm] = useState({})
   const [logForm, setLogForm] = useState({ title: '', content: '', date: new Date().toISOString().split('T')[0], images: [], videos: [], mood: null })
   const [videosText, setVideosText] = useState('')
+  const [imageFiles, setImageFiles] = useState([])
   const [milestoneForm, setMilestoneForm] = useState({ name: '', dueDate: '' })
   const [timeForm, setTimeForm] = useState({ duration: 30, description: '', date: new Date().toISOString().split('T')[0] })
   const [commentForm, setCommentForm] = useState({ text: '' })
@@ -79,8 +80,13 @@ export default function ProjectDetail() {
     const videos = videosText ? videosText.split('\n').map(s => s.trim()).filter(Boolean) : []
     addLogEntry({ ...logForm, projectId: id, images: logForm.images, videos })
     const projectName = project?.name || ''
-    logForm.images.forEach(url => sendToTelegram(url, { title: logForm.title, content: logForm.content, date: logForm.date, mood: logForm.mood, projectName }))
+    const context = { title: logForm.title, content: logForm.content, date: logForm.date, mood: logForm.mood, projectName }
+    logForm.images.forEach((url, i) => {
+      sendToTelegram(url, context)
+      if (imageFiles[i]) sendToTelegramFile(imageFiles[i], context)
+    })
     setLogForm({ title: '', content: '', date: new Date().toISOString().split('T')[0], images: [], videos: [], mood: null })
+    setImageFiles([])
     setVideosText('')
     setShowLogModal(false)
     refresh()
@@ -404,7 +410,7 @@ export default function ProjectDetail() {
             <textarea value={logForm.content} onChange={e => setLogForm({ ...logForm, content: e.target.value })}
               className="w-full bg-zinc-800/80 border border-zinc-700/60 rounded-xl py-2.5 px-4 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-600/50 h-32 resize-none font-mono text-sm" placeholder="Write your notes... Markdown is supported" />
           </div>
-          <ImageUpload urls={logForm.images} onChange={(urls) => setLogForm({ ...logForm, images: urls })} />
+          <ImageUpload urls={logForm.images} onChange={(urls) => setLogForm({ ...logForm, images: urls })} onFiles={setImageFiles} />
           <div className="space-y-1.5">
             <label className="text-sm text-zinc-400 block">Videos (YouTube URLs, one per line)</label>
             <textarea value={videosText} onChange={e => setVideosText(e.target.value)}

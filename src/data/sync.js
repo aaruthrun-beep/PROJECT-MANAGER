@@ -230,39 +230,36 @@ export async function uploadImageToCdn(file) {
   return result.data.display_url || result.data.image?.url || result.data.url
 }
 
-/** Send an image to Telegram with a rich caption. Downloads from ImgBB CDN and uploads the raw blob for best quality. */
-export async function sendToTelegram(url, context) {
+/** Post ImgBB URL to Telegram instantly (~1 sec). Quality is Telegram's default compression. */
+export function sendToTelegram(url, context) {
   const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
   const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
   if (!tgToken || !chatId) return
 
   const caption = buildCaption(context)
+  const body = new URLSearchParams({ chat_id: chatId, photo: url })
+  if (caption) { body.set('caption', caption); body.set('parse_mode', 'HTML') }
 
-  try {
-    // Download full-resolution image from ImgBB CDN (CORS headers allow this)
-    const img = await fetch(url)
-    if (!img.ok) throw new Error(`ImgBB download ${img.status}`)
-    const blob = await img.blob()
+  fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, { method: 'POST', body })
+    .then(r => { if (!r.ok) r.text().then(t => console.error('Telegram error:', r.status, t.slice(0, 200))) })
+    .catch(() => {})
+}
 
-    // Upload to Telegram via multipart/form-data (no intermediate URL fetch)
+/** Upload original file directly to Telegram for best quality. Fire this alongside sendToTelegram — it takes longer but produces a better image. */
+export function sendToTelegramFile(file, context, caption) {
+  const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
+  const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
+  if (!tgToken || !chatId) return
+
+  const c = buildCaption(context)
+  file.arrayBuffer().then(buffer => {
+    const blob = new Blob([buffer], { type: file.type })
     const fd = new FormData()
     fd.append('chat_id', chatId)
-    fd.append('photo', blob, 'photo.jpg')
-    if (caption) {
-      fd.append('caption', caption)
-      fd.append('parse_mode', 'HTML')
-    }
-    const r = await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, { method: 'POST', body: fd })
-    if (!r.ok) {
-      const t = await r.text().catch(() => '')
-      console.error('Telegram direct error:', r.status, t.slice(0, 200))
-    }
-  } catch (e) {
-    // Fallback: URL-based approach (lower quality but reliable)
-    const body = new URLSearchParams({ chat_id: chatId, photo: url })
-    if (caption) { body.set('caption', caption); body.set('parse_mode', 'HTML') }
-    fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, { method: 'POST', body })
-      .then(r => { if (!r.ok) r.text().then(t => console.error('Telegram URL fallback error:', r.status, t.slice(0, 200))) })
+    fd.append('photo', blob, file.name || 'photo.jpg')
+    if (c) { fd.append('caption', c); fd.append('parse_mode', 'HTML') }
+    fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, { method: 'POST', body: fd })
+      .then(r => { if (!r.ok) r.text().then(t => console.error('Telegram file error:', r.status, t.slice(0, 200))) })
       .catch(() => {})
-  }
+  }).catch(() => {})
 }
