@@ -29,9 +29,9 @@ jobs:
           BASE_PATH: /PROJECT-MANAGER/
           SITE_URL: https://aaruthrun-beep.github.io
           PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_aW50ZW5zZS1iYWJvb24tNDMuY2xlcmsuYWNjb3VudHMuZGV2JA
-          PUBLIC_IMGBB_API_KEY: 05bfed9dc27a476adb73e2814fa5efaa
-          PUBLIC_TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          PUBLIC_TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+           PUBLIC_IMGBB_API_KEY: 05bfed9dc27a476adb73e2814fa5efaa
+           PUBLIC_TELEGRAM_BOT_TOKEN: 8841115247:AAG34SbJ2YYyN1_49aA-E3Usjn95Uv6IAbU
+           PUBLIC_TELEGRAM_CHANNEL_ID: -1004493815808
           PUBLIC_AUTHORIZED_EMAIL: aaruthrun@gmail.com
       - uses: actions/upload-pages-artifact@v3
         with:
