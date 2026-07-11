@@ -12,6 +12,7 @@ import Modal from '../ui/Modal'
 import Input from '../ui/Input'
 import LogEntryCard from '../components/LogEntryCard'
 import ImageUpload from '../ui/ImageUpload'
+import { sendToTelegram } from '../data/sync'
 import Timer from '../ui/Timer'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -77,6 +78,8 @@ export default function ProjectDetail() {
     if (!logForm.title.trim()) return
     const videos = videosText ? videosText.split('\n').map(s => s.trim()).filter(Boolean) : []
     addLogEntry({ ...logForm, projectId: id, images: logForm.images, videos })
+    const projectName = project?.name || ''
+    logForm.images.forEach(url => sendToTelegram(url, { title: logForm.title, content: logForm.content, date: logForm.date, mood: logForm.mood, projectName }))
     setLogForm({ title: '', content: '', date: new Date().toISOString().split('T')[0], images: [], videos: [], mood: null })
     setVideosText('')
     setShowLogModal(false)
@@ -401,8 +404,7 @@ export default function ProjectDetail() {
             <textarea value={logForm.content} onChange={e => setLogForm({ ...logForm, content: e.target.value })}
               className="w-full bg-zinc-800/80 border border-zinc-700/60 rounded-xl py-2.5 px-4 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-600/50 h-32 resize-none font-mono text-sm" placeholder="Write your notes... Markdown is supported" />
           </div>
-          <ImageUpload urls={logForm.images} onChange={(urls) => setLogForm({ ...logForm, images: urls })}
-            captionData={{ title: logForm.title, content: logForm.content, date: logForm.date, mood: logForm.mood, projectName: project?.name }} />
+          <ImageUpload urls={logForm.images} onChange={(urls) => setLogForm({ ...logForm, images: urls })} />
           <div className="space-y-1.5">
             <label className="text-sm text-zinc-400 block">Videos (YouTube URLs, one per line)</label>
             <textarea value={videosText} onChange={e => setVideosText(e.target.value)}

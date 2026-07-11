@@ -3,7 +3,7 @@ import { Upload, X, Loader2 } from 'lucide-react'
 import { uploadImageToCdn } from '../data/sync'
 import toast from 'react-hot-toast'
 
-export default function ImageUpload({ urls, onChange, captionData }) {
+export default function ImageUpload({ urls, onChange }) {
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const inputRef = useRef(null)
@@ -28,7 +28,7 @@ export default function ImageUpload({ urls, onChange, captionData }) {
     const newUrls = [...urls]
     for (const file of files) {
       try {
-        const url = await uploadImageToCdn(file, captionData)
+        const url = await uploadImageToCdn(file)
         newUrls.push(url)
         toast.success(`${file.name} uploaded`)
       } catch (err) {

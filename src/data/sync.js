@@ -205,12 +205,11 @@ function buildCaption(context) {
   return parts.join('\n').slice(0, 1024)
 }
 
-/** Upload image to both ImgBB (for web display) AND Telegram channel. */
-export async function uploadImageToCdn(file, context) {
+/** Upload image to ImgBB only (for web display). Returns the CDN URL. */
+export async function uploadImageToCdn(file) {
   const apiKey = import.meta.env.PUBLIC_IMGBB_API_KEY
   if (!apiKey) throw new Error('No image upload configured')
 
-  // Step 1: Upload to ImgBB (for thumbnails in the app)
   const base64 = await new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result.split(',')[1])
@@ -228,22 +227,24 @@ export async function uploadImageToCdn(file, context) {
   }
 
   const result = await res.json()
-  const url = result.data.display_url || result.data.image?.url || result.data.url
+  return result.data.display_url || result.data.image?.url || result.data.url
+}
 
-  // Step 2: Non-blocking Telegram upload — send ImgBB URL via application/x-www-form-urlencoded (CORS-simple, no preflight)
+/** Send an ImgBB URL to Telegram with a rich caption. Call this on form submit, not on file select. */
+export function sendToTelegram(url, context) {
   const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
   const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
-  if (tgToken && chatId) {
-    const caption = buildCaption(context)
-    const params = new URLSearchParams({ chat_id: chatId, photo: url })
-    if (caption) params.set('parse_mode', 'HTML')
-    fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, {
-      method: 'POST',
-      body: caption ? new URLSearchParams({ chat_id: chatId, photo: url, caption, parse_mode: 'HTML' }) : params,
-    })
-      .then(r => { if (!r.ok) r.text().then(t => console.error('Telegram error:', r.status, t.slice(0, 200))) })
-      .catch(() => {})
-  }
+  if (!tgToken || !chatId) return
 
-  return url
+  const caption = buildCaption(context)
+  const body = caption
+    ? new URLSearchParams({ chat_id: chatId, photo: url, caption, parse_mode: 'HTML' })
+    : new URLSearchParams({ chat_id: chatId, photo: url })
+
+  fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, {
+    method: 'POST',
+    body,
+  })
+    .then(r => { if (!r.ok) r.text().then(t => console.error('Telegram error:', r.status, t.slice(0, 200))) })
+    .catch(() => {})
 }

@@ -2,6 +2,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, Plus, Search, Sparkles, TrendingUp, Zap, Pin, PenLine } from 'lucide-react'
 import { loadData, addLogEntry, updateLogEntry, deleteLogEntry, getRemoteData } from '../data/store'
+import { sendToTelegram } from '../data/sync'
 import { useAuth } from '../context/AuthContext'
 import { useDataVersion } from '../context/DataContext'
 import Button from '../ui/Button'
@@ -112,6 +113,8 @@ export default function DailyLog() {
       addLogEntry({ ...form, images: form.images, videos })
       toast.success('Entry created')
     }
+    const projectName = data.projects?.find(p => p.id === form.projectId)?.name || ''
+    form.images.forEach(url => sendToTelegram(url, { title: form.title, content: form.content, date: form.date, mood: form.mood, projectName }))
     setForm({ ...emptyForm })
     setVideosText('')
     setEditEntry(null)
@@ -342,8 +345,7 @@ export default function DailyLog() {
             <input type="text" value={form.tags.join(', ')} onChange={e => setForm({ ...form, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
               className="w-full bg-zinc-800/80 border border-zinc-700/60 rounded-xl py-2.5 px-4 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-600/50 text-sm" placeholder="design, frontend, bugfix" />
           </div>
-          <ImageUpload urls={form.images} onChange={(urls) => setForm({ ...form, images: urls })}
-            captionData={{ title: form.title, content: form.content, date: form.date, mood: form.mood, projectName: data.projects?.find(p => p.id === form.projectId)?.name }} />
+          <ImageUpload urls={form.images} onChange={(urls) => setForm({ ...form, images: urls })} />
           <div className="space-y-1.5">
             <label className="text-sm text-zinc-400 block">Videos (YouTube URLs, one per line)</label>
             <textarea value={videosText} onChange={e => setVideosText(e.target.value)}
