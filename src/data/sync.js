@@ -230,7 +230,7 @@ export async function uploadImageToCdn(file) {
   return result.data.display_url || result.data.image?.url || result.data.url
 }
 
-/** Post ImgBB URL to Telegram instantly (~1 sec). Quality is Telegram's default compression. */
+/** Post ImgBB URL to Telegram with caption (instant, runs on form submit). */
 export function sendToTelegram(url, context) {
   const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
   const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
@@ -242,21 +242,5 @@ export function sendToTelegram(url, context) {
 
   fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, { method: 'POST', body })
     .then(r => { if (!r.ok) r.text().then(t => console.error('Telegram error:', r.status, t.slice(0, 200))) })
-    .catch(() => {})
-}
-
-/** Upload original file directly to Telegram for best quality. Fire this alongside sendToTelegram — it avoids the URL-fetch compression Telegram applies. */
-export function sendToTelegramFile(file, context) {
-  const tgToken = import.meta.env.PUBLIC_TELEGRAM_BOT_TOKEN
-  const chatId = import.meta.env.PUBLIC_TELEGRAM_CHANNEL_ID
-  if (!tgToken || !chatId) return
-
-  const c = buildCaption(context)
-  const fd = new FormData()
-  fd.append('chat_id', chatId)
-  fd.append('photo', file)
-  if (c) { fd.append('caption', c); fd.append('parse_mode', 'HTML') }
-  fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, { method: 'POST', body: fd })
-    .then(r => { if (!r.ok) r.text().then(t => console.error('Telegram file error:', r.status, t.slice(0, 200))) })
     .catch(() => {})
 }

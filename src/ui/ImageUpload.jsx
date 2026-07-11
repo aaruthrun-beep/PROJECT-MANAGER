@@ -3,11 +3,10 @@ import { Upload, X, Loader2 } from 'lucide-react'
 import { uploadImageToCdn } from '../data/sync'
 import toast from 'react-hot-toast'
 
-export default function ImageUpload({ urls, onChange, onFiles }) {
+export default function ImageUpload({ urls, onChange }) {
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const inputRef = useRef(null)
-  const imageFilesRef = useRef([])
 
   const handleDrop = async (e) => {
     e.preventDefault()
@@ -27,29 +26,21 @@ export default function ImageUpload({ urls, onChange, onFiles }) {
   const uploadFiles = async (files) => {
     setUploading(true)
     const newUrls = [...urls]
-    const newFiles = [...(imageFilesRef.current)]
     for (const file of files) {
       try {
         const url = await uploadImageToCdn(file)
         newUrls.push(url)
-        newFiles.push(file)
         toast.success(`${file.name} uploaded`)
       } catch (err) {
         toast.error(`${file.name}: ${err.message}`)
       }
     }
-    imageFilesRef.current = newFiles
     onChange(newUrls)
-    if (onFiles) onFiles(newFiles)
     setUploading(false)
   }
 
   const removeUrl = (idx) => {
-    const newUrls = urls.filter((_, i) => i !== idx)
-    const newFiles = imageFilesRef.current.filter((_, i) => i !== idx)
-    imageFilesRef.current = newFiles
-    onChange(newUrls)
-    if (onFiles) onFiles(newFiles)
+    onChange(urls.filter((_, i) => i !== idx))
   }
 
   return (
